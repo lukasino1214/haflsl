@@ -6,9 +6,9 @@
 #include <algorithm>
 
 namespace HAFLSL {
-    auto read_file_to_string(const std::string &filepath) -> std::string {
+    auto read_file_to_string(const std::string &file_path) -> std::string {
         std::string content;
-        std::ifstream in(filepath, std::ios::in | std::ios::binary);
+        std::ifstream in(file_path, std::ios::in | std::ios::binary);
         if (in) {
             in.seekg(0, std::ios::end);
             u32 size = static_cast<u32>(in.tellg());
@@ -44,7 +44,7 @@ namespace HAFLSL {
             }
         }
         words.push_back(content.substr(counter, len));
-        return std::move(words);
+        return words;
     }
 
     auto string_to_lines(const std::string &content) -> std::vector<std::string> {

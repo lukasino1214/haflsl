@@ -33,5 +33,6 @@
 
 build/
 *.log
+*.txt
 .vscode/
 .fleet/

@@ -1,3 +1,8 @@
+#include "test_1.txt"
+#define N vec3(1.0)
+
+vec3 a = N;
+
 void main() {
     vec3 test = vec3(1.0);
 }
