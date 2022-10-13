@@ -11,12 +11,14 @@ namespace HAFLSL {
     };
 
     struct Compiler {
-        auto compile(const std::string& file_path) -> std::vector<u32>;
+        //Compiler(const CompilerInfo& info);
+
+        void compile(const std::string& file_path);
 
       private:
-        friend auto create_compiler(const CompilerInfo& info) -> Compiler; 
-        Compiler(const CompilerInfo& info);
+      Compiler(const CompilerInfo& info);
+        friend auto create_compiler(const CompilerInfo& info) -> Compiler;
     };
 
-    auto create_compiler(const CompilerInfo& info) -> Compiler; 
+    auto create_compiler(const CompilerInfo& info) -> Compiler;
 }

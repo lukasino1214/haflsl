@@ -2,9 +2,11 @@
 #include <haflsl/utils.hpp>
 
 #include <fstream>
+#include <sstream>
+#include <algorithm>
 
 namespace HAFLSL {
-    std::string read_file_to_string(const std::string &filepath) {
+    auto read_file_to_string(const std::string &filepath) -> std::string {
         std::string content;
         std::ifstream in(filepath, std::ios::in | std::ios::binary);
         if (in) {
@@ -23,14 +25,14 @@ namespace HAFLSL {
         return content;
     }
 
-    std::vector<std::string> string_to_words(const std::string &content) {
+    auto string_to_words(const std::string &content) -> std::vector<std::string> {
         std::vector<std::string> words{};
         std::string_view view = content;
         u32 counter = 0;
         u32 len = 0;
 
         for(u32 i = 0; i < content.size(); i++) {
-            if(view[i] != ' ' && view[i] != '\n') {
+            if(view[i] != ' ' && view[i] != '\n'&& view[i] != '\t' && view[i] != '\v' && view[i] != '\r' && view[i] != '\f') {
                 len += 1;
             } else {
                 if(len != 0) {
@@ -43,5 +45,17 @@ namespace HAFLSL {
         }
         words.push_back(content.substr(counter, len));
         return std::move(words);
+    }
+
+    auto string_to_lines(const std::string &content) -> std::vector<std::string> {
+        std::vector<std::string> lines{};
+        std::stringstream ss{content};
+
+        for (std::string line; std::getline(ss, line, '\n');) {
+            //line.erase(std::remove_if(line.begin(), line.end(), ::isspace), line.end());
+            lines.push_back(line);
+        }
+
+        return lines;
     }
 }
