@@ -1,6 +1,8 @@
 #define NORMAL vec3(1.0)
+#define MAKE_VEC3(x, y, z) vec3(x, y, z)
 
 vec3 a = NORMAL;
+vec3 b = MAKE_VEC3(300.0, 200.0, 10.0);
 // test
 // bruh
 /* awodnowan d */
