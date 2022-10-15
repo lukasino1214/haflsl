@@ -170,7 +170,8 @@ namespace HAFLSL {
                     std::string macro_name = "";
                     for(u32 i = 0; i < name.size(); i++) {
                         if(name[i] == '(') {
-                            macro_name = name.substr(0, i - 1);
+                            macro_name = name.substr(0, i);
+                            //INFO("bruh {}", name.substr(0, i));
                         }
                     }
 
@@ -228,24 +229,18 @@ namespace HAFLSL {
                 usize len = removed_defines_lines[i].find(macro.first);
                 if(len != std::string::npos) {
                     std::string str = removed_defines_lines[i].substr(0, len);
-                    //std::string end = removed_defines_lines[i].substr(len + define.first.size(), removed_defines_lines[i].size() - len - define.first.size());
-                    std::string code = "";
-                    /*for(auto& c : macro.second.text) {
-                        code += c;
-                    }*/
-
-                    code += macro.second.text[0];
+                    std::string code = macro.second.text[0];
 
                     std::string end = "";
                     bool bracket = false;
                     u32 start_n = 0;
                     u32 end_n = 0;
                     u32 parameter_count = 0;
-                    for(u32 j = len + macro.first.size() + 1; j < removed_defines_lines[i].size(); j++) {
+                    for(u32 j = len + macro.first.size(); j < removed_defines_lines[i].size(); j++) {
+                        INFO("char: {}", removed_defines_lines[i][j]);
                         if(removed_defines_lines[i][j] == '(') {
                             bracket = true;
                             start_n = j + 1;
-                            //INFO("{}", removed_defines_lines[i][j]);
                         }
                         if(bracket && removed_defines_lines[i][j] == ',') {
                             parameter_count += 1;
@@ -259,13 +254,12 @@ namespace HAFLSL {
                         if(macro.second.parameters.size() - 1 == parameter_count && removed_defines_lines[i][j] == ')') {
                             parameter_count += 1;
                             end_n = j - 1;
-                            code += removed_defines_lines[i].substr(start_n, end_n - start_n + 1);
+                            code += removed_defines_lines[i].substr(start_n + 1, end_n - start_n);
                             code += macro.second.text[parameter_count];
-                            //INFO("paramter {}", removed_defines_lines[i].substr(start_n, end_n - start_n + 1));
                         }
 
                         if(macro.second.parameters.size() == parameter_count) {
-                            end =  removed_defines_lines[i].substr(j + 1, removed_defines_lines[i].size() - j);
+                            end = removed_defines_lines[i].substr(j + 1, removed_defines_lines[i].size() - j);
                             break;
                         }
                     }
