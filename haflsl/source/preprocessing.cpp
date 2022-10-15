@@ -112,11 +112,6 @@ namespace HAFLSL {
             }
         }
 
-        for(auto& define : defines) {
-            INFO("found define name: {:s}", define.first);
-            INFO("found define expr: {:s}", define.second);
-        }
-
         std::vector<std::string> removed_defines_lines = string_to_lines(removed_defines);
         for(u32 i = 0; i < removed_defines_lines.size(); i++) {
             for(auto& define : defines) {
@@ -129,15 +124,50 @@ namespace HAFLSL {
             }
         }
 
-        std::string code_after_defines = "";
-        for(u32 i = 0; i < removed_defines_lines.size(); i++) {
-           if(i != removed_defines_lines.size() - 1) {
-                code_after_defines += removed_defines_lines[i] + "\n";
+        std::string code_after_defines = lines_to_string(removed_defines_lines);
+
+        std::vector<std::string> lines_a = string_to_lines(code_after_defines);
+        std::vector<std::string> lines_b;
+        bool found_multi_line_comment = false;
+        u32 found_multi_line_comment_line = 0;
+        u32 found_multi_line_comment_pos = 0;
+        for(u32 i = 0; i < lines_a.size(); i++) {
+            if(found_multi_line_comment) {
+                usize index = lines_a[i].find("*/");
+                if(index != std::string::npos) {
+                    lines_b.push_back(lines_a[found_multi_line_comment_line].substr(0, found_multi_line_comment_pos));
+                    lines_b.push_back(lines_a[i].substr(index + 2, lines_a[i].size() - index));
+                    found_multi_line_comment_line = 0;
+                    found_multi_line_comment_pos = 0;
+                    found_multi_line_comment = false;
+                }
             } else {
-                code_after_defines += removed_defines_lines[i];
+                usize index_1 = lines_a[i].find("//");
+                usize index_2 = lines_a[i].find("/*");
+                if(index_1 != std::string::npos) {
+                    lines_b.push_back(lines_a[i].substr(0, index_1));
+                } else if(index_2 != std::string::npos) {
+                    usize index = lines_a[i].find("*/");
+                    if(index != std::string::npos) {                                               // if the mutli line comment is found one same line with end
+                        std::string start = lines_a[i].substr(0, index_2);                         // |- start  -|             |-  end  -|
+                        std::string end = lines_a[i].substr(index + 2, lines_a[i].size() - index); // vec3 bruh = /* comment */ vec3(2.0);
+
+                        lines_b.push_back(start + end);
+                    } else {
+                        found_multi_line_comment = true;
+                        found_multi_line_comment_line = i;
+                        found_multi_line_comment_pos = index_2;
+                    }
+                } else {
+                    lines_b.push_back(lines_a[i]);
+                }
             }
         }
 
-        return code_after_defines;
+        std::string code_after_removing_comments = lines_to_string(lines_b);
+
+        //std::vector<std::string> lines_a = string_to_lines(code_after_defines);
+
+        return code_after_removing_comments;
     }
 }
