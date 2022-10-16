@@ -36,3 +36,5 @@ build/
 *.txt
 .vscode/
 .fleet/
+.cache/
+compile_commands.json

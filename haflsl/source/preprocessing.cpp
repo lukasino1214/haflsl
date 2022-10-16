@@ -16,7 +16,6 @@ namespace HAFLSL {
         includer = [&includer](const std::string& header_name, const std::string& includer_name) -> std::string {
             std::string src = read_file_to_string(header_name);
 
-
             std::vector<std::string> include_paths = {};
             std::vector<std::string> lines = string_to_lines(src);
             for(auto& line : lines) {
@@ -49,11 +48,7 @@ namespace HAFLSL {
             for(u32 i = 0; i < lines.size(); i++) {
                 usize len = lines[i].find("#include");
                 if(len == std::string::npos) {
-                    if(i != lines.size() - 1) {
-                        removed_includes += lines[i] + "\n";
-                    } else {
-                        removed_includes += lines[i];
-                    }
+                    removed_includes += lines[i] + "\n";
                 }
             }
 
@@ -171,7 +166,6 @@ namespace HAFLSL {
                     for(u32 i = 0; i < name.size(); i++) {
                         if(name[i] == '(') {
                             macro_name = name.substr(0, i);
-                            //INFO("bruh {}", name.substr(0, i));
                         }
                     }
 
@@ -188,11 +182,7 @@ namespace HAFLSL {
         for(u32 i = 0; i < src_lines.size(); i++) {
             usize len = src_lines[i].find("#define");
             if(len == std::string::npos) {
-                if(i != src_lines.size() - 1) {
-                    removed_defines += src_lines[i] + "\n";
-                } else {
-                    removed_defines += src_lines[i];
-                }
+                removed_defines += src_lines[i] + "\n";
             }
         }
 
@@ -237,7 +227,6 @@ namespace HAFLSL {
                     u32 end_n = 0;
                     u32 parameter_count = 0;
                     for(u32 j = len + macro.first.size(); j < removed_defines_lines[i].size(); j++) {
-                        INFO("char: {}", removed_defines_lines[i][j]);
                         if(removed_defines_lines[i][j] == '(') {
                             bracket = true;
                             start_n = j + 1;
@@ -247,7 +236,6 @@ namespace HAFLSL {
                             end_n = j - 1;
                             code += removed_defines_lines[i].substr(start_n + (parameter_count == 1 ? 0 : 1), end_n - start_n + (parameter_count == 1 ? 1 : 0));
                             code += macro.second.text[parameter_count];
-                            //INFO("paramter {}", removed_defines_lines[i].substr(start_n, end_n - start_n + 1));
                             start_n = j + 1;
                         }
 
@@ -309,7 +297,16 @@ namespace HAFLSL {
             }
         }
 
-        std::string code_after_removing_comments = lines_to_string(lines_b);
+        std::vector<std::string> no_spaces_lines;
+        for(auto& n_line : lines_b) {
+            std::string test = n_line;
+            test.erase(std::remove_if(test.begin(), test.end(), ::isspace), test.end());
+            if(!test.empty()) {
+                no_spaces_lines.push_back(std::move(n_line));
+            } 
+        }
+
+        std::string code_after_removing_comments = lines_to_string(no_spaces_lines);
         return code_after_removing_comments;
     }
 }

@@ -62,11 +62,7 @@ namespace HAFLSL {
     auto lines_to_string(const std::vector<std::string> &lines) -> std::string {
         std::string content = "";
         for(u32 i = 0; i < lines.size(); i++) {
-           if(i != lines.size() - 1) {
-                content += lines[i] + "\n";
-            } else {
-                content += lines[i];
-            }
+            content += lines[i] + "\n";
         }
 
         return content;

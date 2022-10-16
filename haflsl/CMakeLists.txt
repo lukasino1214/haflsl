@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 project(HAFLSL)
 
 add_library(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE source/utils.cpp source/compiler.cpp source/logger.cpp source/preprocessing.cpp)
+target_sources(${PROJECT_NAME} PRIVATE source/utils.cpp source/compiler.cpp source/logger.cpp source/preprocessing.cpp source/lexer.cpp)
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
 
 target_include_directories(
