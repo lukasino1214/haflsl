@@ -3,11 +3,15 @@
 
 #include <vector>
 #include <string>
+#include <unordered_map>
 
 namespace HAFLSL {
-    namespace Lexer {
+    struct Lexer {
+        Lexer();
+
         auto tokenize(const std::string& src) -> std::vector<Token>;
-        auto token_to_string_view(const std::string& src, const Token& token) -> std::string_view;
         void print_token(const std::string& src, const Token& token);
-    }
+
+        std::unordered_map<std::string_view, TokenType> keywords{};
+    };
 }

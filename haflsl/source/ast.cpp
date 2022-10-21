@@ -10,7 +10,7 @@ namespace HAFLSL {
         for(u32 i = 0; i < tokens.size(); i++) {
             for(auto& type : types) {
                 if(tokens[i].type == type) {
-                    if(tokens[i+1].type == TokenType::ID) {
+                    /*if(tokens[i+1].type == TokenType::ID) {
                         if(tokens[i+2].type == TokenType::ASSIGN) {
                             INFO("found assignment");
                             u32 start = tokens[i].index;
@@ -34,7 +34,7 @@ namespace HAFLSL {
                                 }
                             }
                         }
-                    }
+                    }*/
                 }
             }
         }

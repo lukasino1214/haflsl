@@ -18,12 +18,13 @@ namespace HAFLSL {
     void Compiler::compile(const std::string& file_path) {
         std::string processed = preprocessing(file_path);
         INFO("Preproccesed file: \n{:s}", processed);
-        std::vector<Token> tokens = Lexer::tokenize(processed);
+        Lexer lexer;
+        std::vector<Token> tokens = lexer.tokenize(processed);
         INFO("Lexer found {} tokens!", tokens.size());
-        /*INFO("Printing tokens from lexer");
+        INFO("Printing tokens from lexer");
         for(auto& token : tokens) {
-            Lexer::print_token(processed, token);
-        }*/
+            lexer.print_token(processed, token);
+        }
         INFO("Starting AST!");
         AST::process(tokens, processed);
     }
