@@ -22,6 +22,7 @@ void main() {
 
     // I hate this
 }
+/*
 []
 .
 +
@@ -254,3 +255,16 @@ lowp
 ^
 &
 ?
+*/
+true
+false
+vtes.x
+struct adad
+struct nnn
+nnn a
+100.5
+120.0f
+25u
+25
+0x000
+00x00

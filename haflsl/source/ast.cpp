@@ -10,8 +10,8 @@ namespace HAFLSL {
         for(u32 i = 0; i < tokens.size(); i++) {
             for(auto& type : types) {
                 if(tokens[i].type == type) {
-                    /*if(tokens[i+1].type == TokenType::ID) {
-                        if(tokens[i+2].type == TokenType::ASSIGN) {
+                    if(tokens[i+1].type == TokenType::IDENTIFIER) {
+                        if(tokens[i+2].type == TokenType::EQUAL) {
                             INFO("found assignment");
                             u32 start = tokens[i].index;
                             for(u32 j = i + 2; j < tokens.size(); j++) {
@@ -23,18 +23,18 @@ namespace HAFLSL {
                             }
                         }
 
-                        if(tokens[i+2].type == TokenType::LPAREN) {
+                        if(tokens[i+2].type == TokenType::LEFT_PAREN) {
                             INFO("found function");
                             u32 start = tokens[i].index;
                             for(u32 j = i + 2; j < tokens.size(); j++) {
-                                if(tokens[j].type == TokenType::RBRACKET) {
+                                if(tokens[j].type == TokenType::RIGHT_BRACE) {
                                     std::string_view line(src.data() + start, tokens[j].index - start + 1);
-                                    INFO("{}", line);
+                                    INFO("\n{}", line);
                                     break;
                                 }
                             }
                         }
-                    }*/
+                    }
                 }
             }
         }

@@ -13,6 +13,7 @@ execute_process(
 project(CompilerLib)
 
 find_package(spdlog CONFIG REQUIRED)
+find_package(FastFloat CONFIG REQUIRED)
 
 add_subdirectory(haflsl)
 add_subdirectory(test)

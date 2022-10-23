@@ -1,5 +1,7 @@
 #pragma once
 #include "types.hpp"
+#include <variant>
+#include <string_view>
 
 namespace HAFLSL {
     enum class TokenType : u32 {
@@ -219,5 +221,6 @@ namespace HAFLSL {
     struct Token {
         TokenType type;
         usize index, len;
+        std::variant<std::monostate, u64, i64, f64, bool, std::string_view> data = std::monostate{};
     };
 }

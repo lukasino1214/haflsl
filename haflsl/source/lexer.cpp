@@ -1,5 +1,7 @@
 #include <haflsl/lexer.hpp>
 #include <haflsl/logger.hpp>
+#include <fast_float/fast_float.h>
+#include <charconv>
 
 namespace HAFLSL {
     Lexer::Lexer() {
@@ -357,14 +359,49 @@ namespace HAFLSL {
                         tokens.push_back({TokenType::QUESTION, i, 1});
                         break;
                     default:
-                        u32 pos = i;
+                        /*u32 pos = i;
                         while(true) {
-                            if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')' || src[pos] == ',' || src[pos] == '\n') {
+                            if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')'|| src[pos] == '.' || src[pos] == ',' || src[pos] == '\n') {
                                 tokens.push_back({TokenType::IDENTIFIER, i, pos - i});
                                 i = pos - 1;
                                 break;
                             }
                             pos++;
+                        }
+                        break;*/
+
+                        u32 pos = i;
+                        bool found_number = false;
+                        switch(src[pos]) {
+                            case '0' ... '9':
+                                found_number = true;
+                                break;
+                            default:
+                                break;
+                        }
+                        while(true) {
+                            if(!found_number) {
+                                if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')'|| src[pos] == '.' || src[pos] == ',' || src[pos] == '\n') {
+                                    tokens.push_back({TokenType::IDENTIFIER, i, pos - i});
+                                    i = pos - 1;
+                                    break;
+                                }
+                                pos++;
+                            } else {
+                                if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')' || src[pos] == ',' || src[pos] == '\n') {
+                                    Token token {
+                                        .type = TokenType::IDENTIFIER,
+                                        .index = i,
+                                        .len =  pos - i,
+                                        .data = std::string_view{src.data() + tokens[i].index, tokens[i].len}
+                                    };
+                                    tokens.push_back(std::move(token));
+                                    
+                                    i = pos - 1;
+                                    break;
+                                }
+                                pos++;
+                            }
                         }
                         break;
                 }
@@ -373,9 +410,138 @@ namespace HAFLSL {
 
         // check identifiers if they are not some token
         for(auto& token : tokens) {
-            std::string view{src.data() + token.index, token.len};
-            if(keywords.find(view) != keywords.end()) {
-               token.type = keywords.at(view);
+            if(token.type == TokenType::IDENTIFIER) {
+                std::string view{src.data() + token.index, token.len};
+                if(keywords.find(view) != keywords.end()) {
+                token.type = keywords.at(view);
+                }
+            }
+        }
+
+        std::vector<std::string_view> structs;
+
+        for(u32 i = 0; i < tokens.size(); i++) {
+            if(tokens[i].type == TokenType::IDENTIFIER) {
+                std::string view{src.data() + tokens[i].index, tokens[i].len};
+                if(view == "true") {
+                    tokens[i].type = TokenType::BOOLCONSTANT;
+                    tokens[i].data = true;
+                    continue;
+                }
+
+                if(view == "false") {
+                    tokens[i].type = TokenType::BOOLCONSTANT;
+                    tokens[i].data = false;
+                    continue;
+                }
+
+
+                bool found_dot = false; 
+                bool hexadecimal = false;
+                bool found_float = false;
+                bool found_uint = false;
+                bool is_number = false;
+                bool fix = false;
+                for(u32 j = 0; j < tokens[i].len; j++) {
+                    switch(src[tokens[i].index + j]) {
+                        case '0' ... '9':
+                            if(j == 0) {
+                                is_number = true;
+                            }
+                            break;
+                        default:
+                            if(is_number) {
+                                if(j == 1) {
+                                    if(src[tokens[i].index + j] == 'X' || src[tokens[i].index + j] == 'x' || src[tokens[i].index] == '0') {
+                                        hexadecimal = true;
+                                        continue;
+                                    }
+                                }
+                                if(j == tokens[i].len - 1) {
+                                    if(src[tokens[i].index + j] == 'U' || src[tokens[i].index + j] == 'u') {
+                                        found_uint = true;
+                                        fix = true;
+                                        continue;
+                                    } else if(src[tokens[i].index + j] == 'F' || src[tokens[i].index + j] == 'f') {
+                                        found_float = true;
+                                        fix = true;
+                                        continue;
+                                    } 
+                                    else {
+                                        INFO("error");
+                                    }
+                                }
+                                if(src[tokens[i].index + j] == '.') {
+                                    found_dot = true;
+                                    continue;
+                                }
+                            }
+
+                            break;
+                    }
+                }
+
+                if(is_number) {
+                    if(found_dot) {
+                        f64 value;
+						fast_float::from_chars_result r = fast_float::from_chars(src.data() + tokens[i].index, src.data() + tokens[i].index + tokens[i].len - fix, value);
+						if (r.ptr == src.data() + tokens[i].index + tokens[i].len - fix && r.ec == std::errc{}) {
+                            INFO("{}", value);
+                            tokens[i].data = value;
+                        } else if (r.ec == std::errc::result_out_of_range) {
+                            INFO("result out of range");
+                        } else {
+                            INFO("bad number");
+                        }
+
+                        if(found_float) {
+                            tokens[i].type = TokenType::FLOATCONSTANT;
+                        } else {
+                            tokens[i].type = TokenType::DOUBLECONSTANT;
+                        }
+                    } else {
+                        i64 value;
+						std::from_chars_result r = std::from_chars(src.data() + tokens[i].index, src.data() + tokens[i].index + tokens[i].len - fix, value, (hexadecimal) ? 16 : 10);
+						if (r.ptr == src.data() + tokens[i].index + tokens[i].len - fix && r.ec == std::errc{}) {
+                            INFO("{}", value);
+                        } else if (r.ec == std::errc::result_out_of_range) {
+                            INFO("result out of range");
+                        } else {
+                            INFO("bad number");
+                        }
+
+                        if(found_uint) {
+                            tokens[i].type = TokenType::UINTCONSTANT;
+                            tokens[i].data = static_cast<u64>(value);
+                        } else {
+                            tokens[i].type = TokenType::INTCONSTANT;
+                            tokens[i].data = value;
+                        }
+                    }
+                }
+            }
+            
+            if(i != 0) {
+                if(tokens[i-1].type == TokenType::DOT) {
+                    tokens[i].type = TokenType::FIELD_SELECTION;
+                    continue;
+                }
+
+                if(tokens[i-1].type == TokenType::STRUCT) {
+                    tokens[i].type = TokenType::TYPE_NAME;
+                    structs.emplace_back(src.data() + tokens[i].index, tokens[i].len);
+                    continue;
+                }
+
+                if(tokens[i].type == TokenType::IDENTIFIER) {
+                    std::string view{src.data() + tokens[i].index, tokens[i].len};
+                    for(auto& s : structs) {
+                        if(view == s) {
+                            tokens[i].type = TokenType::TYPE_NAME;
+                            continue;
+                        }
+                    }
+                }
             }
         }
 
@@ -844,25 +1010,25 @@ namespace HAFLSL {
                 INFO("TOKEN TYPE: IDENTIFIER \t\t VALUE: {:s}", src.substr(token.index, token.len)); 
                 break;
             case TokenType::TYPE_NAME:
-                INFO("TOKEN TYPE: TYPE_NAME \t\t VALUE: fuck"); 
+                INFO("TOKEN TYPE: TYPE_NAME \t\t VALUE: {:s}", src.substr(token.index, token.len)); 
                 break;
             case TokenType::FLOATCONSTANT:
-                INFO("TOKEN TYPE: FLOATCONSTANT \t\t VALUE: fuck"); 
+                INFO("TOKEN TYPE: FLOATCONSTANT \t\t VALUE: {:s}", src.substr(token.index, token.len)); 
                 break;
             case TokenType::INTCONSTANT:
-                INFO("TOKEN TYPE: INTCONSTANT \t\t VALUE: fuck"); 
+                INFO("TOKEN TYPE: INTCONSTANT \t\t VALUE: {:s}", src.substr(token.index, token.len)); 
                 break;
             case TokenType::UINTCONSTANT:
-                INFO("TOKEN TYPE: UINTCONSTANT \t\t VALUE: fuck"); 
+                INFO("TOKEN TYPE: UINTCONSTANT \t\t VALUE: {:s}", src.substr(token.index, token.len)); 
                 break;
             case TokenType::BOOLCONSTANT:
-                INFO("TOKEN TYPE: BOOLCONSTANT \t\t VALUE: fuck"); 
+                INFO("TOKEN TYPE: BOOLCONSTANT \t\t VALUE: {:s}", std::get<bool>(token.data) ? "true" : "false"); 
                 break;
             case TokenType::DOUBLECONSTANT:
-                INFO("TOKEN TYPE: DOUBLECONSTANT \t\t VALUE: fuck"); 
+                INFO("TOKEN TYPE: DOUBLECONSTANT \t\t VALUE: {:s}", src.substr(token.index, token.len)); 
                 break;
             case TokenType::FIELD_SELECTION:
-                INFO("TOKEN TYPE: FIELD_SELECTION \t\t VALUE: fuck"); 
+                INFO("TOKEN TYPE: FIELD_SELECTION \t\t VALUE: {:s}", src.substr(token.index, token.len)); 
                 break;
             case TokenType::LEFT_OP:
                 INFO("TOKEN TYPE: LEFT_OP \t\t\t VALUE: <<");

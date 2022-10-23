@@ -7,7 +7,7 @@ project(HAFLSL)
 
 add_library(${PROJECT_NAME})
 target_sources(${PROJECT_NAME} PRIVATE source/utils.cpp source/compiler.cpp source/logger.cpp source/preprocessing.cpp source/lexer.cpp source/ast.cpp)
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC spdlog::spdlog spdlog::spdlog_header_only)
+target_link_libraries(${PROJECT_NAME} LINK_PUBLIC spdlog::spdlog spdlog::spdlog_header_only FastFloat::fast_float)
 
 target_include_directories(
     ${PROJECT_NAME}
