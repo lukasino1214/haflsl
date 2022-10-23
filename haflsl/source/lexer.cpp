@@ -359,17 +359,6 @@ namespace HAFLSL {
                         tokens.push_back({TokenType::QUESTION, i, 1});
                         break;
                     default:
-                        /*u32 pos = i;
-                        while(true) {
-                            if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')'|| src[pos] == '.' || src[pos] == ',' || src[pos] == '\n') {
-                                tokens.push_back({TokenType::IDENTIFIER, i, pos - i});
-                                i = pos - 1;
-                                break;
-                            }
-                            pos++;
-                        }
-                        break;*/
-
                         u32 pos = i;
                         bool found_number = false;
                         switch(src[pos]) {
@@ -380,28 +369,30 @@ namespace HAFLSL {
                                 break;
                         }
                         while(true) {
-                            if(!found_number) {
-                                if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')'|| src[pos] == '.' || src[pos] == ',' || src[pos] == '\n') {
-                                    tokens.push_back({TokenType::IDENTIFIER, i, pos - i});
-                                    i = pos - 1;
-                                    break;
-                                }
-                                pos++;
-                            } else {
-                                if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')' || src[pos] == ',' || src[pos] == '\n') {
-                                    Token token {
-                                        .type = TokenType::IDENTIFIER,
-                                        .index = i,
-                                        .len =  pos - i,
-                                        .data = std::string_view{src.data() + tokens[i].index, tokens[i].len}
-                                    };
-                                    tokens.push_back(std::move(token));
-                                    
-                                    i = pos - 1;
-                                    break;
-                                }
-                                pos++;
+                            if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')' || src[pos] == ',' || src[pos] == '\n') {
+                                Token token {
+                                    .type = TokenType::IDENTIFIER,
+                                    .index = i,
+                                    .len =  pos - i,
+                                    .data = std::string_view{src.data() + i, pos - i}
+                                };
+                                tokens.push_back(std::move(token));
+
+                                i = pos - 1;
+                                break;
+                            } else if(!found_number && src[pos] == '.') {
+                                Token token {
+                                    .type = TokenType::IDENTIFIER,
+                                    .index = i,
+                                    .len =  pos - i,
+                                    .data = std::string_view{src.data() + i, pos - i}
+                                };
+                                tokens.push_back(std::move(token));
+
+                                i = pos - 1;
+                                break;
                             }
+                            pos++;
                         }
                         break;
                 }
