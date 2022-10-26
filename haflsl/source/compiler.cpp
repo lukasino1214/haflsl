@@ -3,7 +3,7 @@
 #include <haflsl/utils.hpp>
 #include <haflsl/preprocessing.hpp>
 #include <haflsl/lexer.hpp>
-#include <haflsl/ast.hpp>
+#include <haflsl/parser.hpp>
 
 namespace HAFLSL {
     auto create_compiler(const CompilerInfo& info) -> Compiler {
@@ -20,12 +20,12 @@ namespace HAFLSL {
         INFO("Preproccesed file: \n{:s}", processed);
         Lexer lexer;
         std::vector<Token> tokens = lexer.tokenize(processed);
-        INFO("Lexer found {} tokens!", tokens.size());
+        /*INFO("Lexer found {} tokens!", tokens.size());
         INFO("Printing tokens from lexer");
         for(auto& token : tokens) {
             lexer.print_token(processed, token);
-        }
-        INFO("Starting AST!");
-        AST::process(tokens, processed);
+        }*/
+        Parser parser;
+        parser.parse(tokens);
     }
 }
