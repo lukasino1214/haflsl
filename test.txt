@@ -16,3 +16,7 @@ vec2 get_vec2(int b, vec4 c) {
     int a = b;
     return vec2(1.0);
 }
+
+vec2 pog = aaa;
+
+//Test aaaa = 2 + 2;

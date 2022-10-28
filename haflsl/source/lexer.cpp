@@ -477,7 +477,6 @@ namespace HAFLSL {
                         f64 value;
 						fast_float::from_chars_result r = fast_float::from_chars(src.data() + tokens[i].index, src.data() + tokens[i].index + tokens[i].len - fix, value);
 						if (r.ptr == src.data() + tokens[i].index + tokens[i].len - fix && r.ec == std::errc{}) {
-                            INFO("{}", value);
                             tokens[i].data = value;
                         } else if (r.ec == std::errc::result_out_of_range) {
                             INFO("result out of range");
@@ -494,7 +493,7 @@ namespace HAFLSL {
                         i64 value;
 						std::from_chars_result r = std::from_chars(src.data() + tokens[i].index, src.data() + tokens[i].index + tokens[i].len - fix, value, (hexadecimal) ? 16 : 10);
 						if (r.ptr == src.data() + tokens[i].index + tokens[i].len - fix && r.ec == std::errc{}) {
-                            INFO("{}", value);
+                            tokens[i].data = value;
                         } else if (r.ec == std::errc::result_out_of_range) {
                             INFO("result out of range");
                         } else {
@@ -534,6 +533,8 @@ namespace HAFLSL {
                 }
             }
         }
+
+        tokens.push_back({TokenType::EOS, 0, 0});
 
         return tokens;
     }

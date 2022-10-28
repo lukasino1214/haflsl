@@ -215,7 +215,8 @@ namespace HAFLSL {
         HIGH_PRECISION = 207, // highp
         MEDIUM_PRECISION = 208, // mediump
         LOW_PRECISION = 209, // lowp
-        PRECISION = 210, // precision
+        PRECISION = 210, // precision,
+        EOS = 211, // end of the file
     };
 
     struct Token {
