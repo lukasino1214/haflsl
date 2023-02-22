@@ -6,7 +6,7 @@ int main() {
         .show_debug_info = true
     });
 
-    compiler.compile("test.txt");
+    std::vector<uint32_t> code = compiler.compile("test.txt");
 
     return 0;
 }

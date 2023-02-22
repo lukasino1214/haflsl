@@ -165,12 +165,11 @@ namespace HAFLSL {
         keywords["mediump"] = TokenType::MEDIUM_PRECISION;
         keywords["lowp"] = TokenType::LOW_PRECISION;
         keywords["precision"] = TokenType::PRECISION;
+        keywords["location"] = TokenType::LOCATION;
     }
 
     auto Lexer::tokenize(const std::string& src) -> std::vector<Token> {
         std::vector<Token> tokens;
-        bool string = false;
-        u32 pos = 0;
         for(u32 i = 0; i < src.size(); i++) {
             if(src[i] != ' ' && src[i] != '\n') {
                 switch(src[i]) {
@@ -369,7 +368,7 @@ namespace HAFLSL {
                                 break;
                         }
                         while(true) {
-                            if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')' || src[pos] == ',' || src[pos] == '\n' || src[pos] == ';') {
+                            if(src[pos] == ' ' || src[pos] == '(' || src[pos] == '=' || src[pos] == ')' || src[pos] == ',' || src[pos] == '\n' || src[pos] == ';' || src[pos] == '+' || src[pos] == '-' || src[pos] == '/' || src[pos] == '*' || src[pos] == '&' || src[pos] == '%' || src[pos] == '|' || src[pos] == '^' || src[pos] == '!' || src[pos] == '~' || src[pos] == '<' || src[pos] == '>') {
                                 Token token {
                                     .type = TokenType::IDENTIFIER,
                                     .index = i,
@@ -442,7 +441,7 @@ namespace HAFLSL {
                             break;
                         default:
                             if(is_number) {
-                                if(j == 1) {
+                                /*if(j == 1) {
                                     if(src[tokens[i].index + j] == 'X' || src[tokens[i].index + j] == 'x' || src[tokens[i].index] == '0') {
                                         hexadecimal = true;
                                         continue;
@@ -461,7 +460,7 @@ namespace HAFLSL {
                                     else {
                                         INFO("error");
                                     }
-                                }
+                                }*/
                                 if(src[tokens[i].index + j] == '.') {
                                     found_dot = true;
                                     continue;
@@ -481,7 +480,7 @@ namespace HAFLSL {
                         } else if (r.ec == std::errc::result_out_of_range) {
                             INFO("result out of range");
                         } else {
-                            INFO("bad number");
+                            INFO("float bad number");
                         }
 
                         if(found_float) {
@@ -497,8 +496,9 @@ namespace HAFLSL {
                         } else if (r.ec == std::errc::result_out_of_range) {
                             INFO("result out of range");
                         } else {
-                            INFO("bad number");
+                            INFO("int bad number");
                         }
+
 
                         if(found_uint) {
                             tokens[i].type = TokenType::UINTCONSTANT;
@@ -846,21 +846,21 @@ namespace HAFLSL {
             case TokenType::SUBROUTINE:
                 return "subroutine";
             case TokenType::IDENTIFIER:
-                return std::get<std::string_view>(token.data);
+                return "identifier";
             case TokenType::TYPE_NAME:
-                return std::get<std::string_view>(token.data);
-            /*case TokenType::FLOATCONSTANT:
-                return std::get<std::string_view>(token.data);
+                return "type_name";
+            case TokenType::FLOATCONSTANT:
+                return "float";
             case TokenType::INTCONSTANT:
-                return std::get<std::string_view>(token.data);
+                return "int";
             case TokenType::UINTCONSTANT:
-                return std::get<std::string_view>(token.data);*/
+                return "uint";
             case TokenType::BOOLCONSTANT:
-                return std::get<bool>(token.data) ? "true" : "false";
-            /*case TokenType::DOUBLECONSTANT:
-                return std::get<std::string_view>(token.data);*/
+                return "bool";
+            case TokenType::DOUBLECONSTANT:
+                return "double";
             case TokenType::FIELD_SELECTION:
-                return std::get<std::string_view>(token.data);
+                return "field_selection";
             case TokenType::LEFT_OP:
                 return "<<";
             case TokenType::RIGHT_OP:
@@ -963,6 +963,10 @@ namespace HAFLSL {
                 return "lowp";
             case TokenType::PRECISION:
                 return "precision";
+            case TokenType::LOCATION:
+                return "location";
+            case TokenType::EOS:
+                return "end of stream";
             default:
                 return "wtf";
         }
@@ -1602,6 +1606,12 @@ namespace HAFLSL {
                 break;
             case TokenType::PRECISION:
                 INFO("TOKEN TYPE: PRECISION \t\t VALUE: precision");
+                break;
+            case TokenType::LOCATION:
+                INFO("TOKEN TYPE: LOCATION \t\t VALUE: location");
+                break;
+            case TokenType::EOS:
+                INFO("TOKEN TYPE: EOS \t\t\t VALUE: end of stream");
                 break;
             default:
                 INFO("TOKEN TYPE: UNKNOWN  \t VALUE: UNKNOWN");

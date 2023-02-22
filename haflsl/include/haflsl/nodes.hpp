@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 #include "logger.hpp"
+#include "token.hpp"
 
 namespace HAFLSL {
     enum class ExpressionType : u32 {
@@ -10,9 +11,11 @@ namespace HAFLSL {
         BinaryExpression,
         UnaryExpression,
         IdentifierExpression,
-        AccessIdentifierExpression, // TODO: implement this
+        AccessIdentifierExpression,
+		AccessIndexExpression,
         AssignExpression,
-        CallFunctionExpression
+        CallFunctionExpression,
+        ConstructorExpression,
     };
 
     struct Expression;
@@ -25,14 +28,14 @@ namespace HAFLSL {
         Expression(Expression&&) noexcept = default;
         virtual ~Expression() = default;
 
-        virtual auto get_type() -> ExpressionType const = 0;
+        virtual auto get_type() -> ExpressionType = 0;
 
         Expression& operator=(const Expression&) = delete;
         Expression& operator=(Expression&&) noexcept = default;
     };
 
     struct ConstantValueExpression : public Expression {
-        auto get_type() -> ExpressionType const override { return ExpressionType::ConstantValueExpression; }
+        auto get_type() -> ExpressionType override { return ExpressionType::ConstantValueExpression; }
 
         Token token; // has type and data. thats why I have token here -_-
     };
@@ -59,7 +62,7 @@ namespace HAFLSL {
     };
 
     struct BinaryExpression : public Expression {
-        auto get_type() -> ExpressionType const override { return ExpressionType::BinaryExpression; }
+        auto get_type() -> ExpressionType override { return ExpressionType::BinaryExpression; }
 
         BinaryType type;
         ExpressionPtr left;
@@ -73,22 +76,30 @@ namespace HAFLSL {
     };
 
     struct UnaryExpression : public Expression {
-        auto get_type() -> ExpressionType const override { return ExpressionType::UnaryExpression; }
+        auto get_type() -> ExpressionType override { return ExpressionType::UnaryExpression; }
 
         UnaryType type;
         ExpressionPtr expr;
     };
 
     struct IdentifierExpression : public Expression {
-        auto get_type() -> ExpressionType const override { return ExpressionType::IdentifierExpression; }
+        auto get_type() -> ExpressionType override { return ExpressionType::IdentifierExpression; }
 
         std::string_view name;
     };
 
     struct AccessIdentifierExpression : public Expression {
-        auto get_type() -> ExpressionType const override { return ExpressionType::AccessIdentifierExpression; }
+        auto get_type() -> ExpressionType override { return ExpressionType::AccessIdentifierExpression; }
 
-        std::string_view name;
+		std::vector<std::string_view> identifiers;
+		ExpressionPtr expr;
+    };
+
+    struct AccessIndexExpression : public Expression {
+        auto get_type() -> ExpressionType override { return ExpressionType::AccessIndexExpression; }
+
+        std::vector<ExpressionPtr> indices;
+		ExpressionPtr expr;
     };
 
     enum class AssignType : u32 {
@@ -106,7 +117,7 @@ namespace HAFLSL {
     };
 
     struct AssignExpression : public Expression {
-        auto get_type() -> ExpressionType const override { return ExpressionType::AssignExpression; }
+        auto get_type() -> ExpressionType override { return ExpressionType::AssignExpression; }
 
         AssignType type;
         ExpressionPtr left;
@@ -114,26 +125,34 @@ namespace HAFLSL {
     };
 
     struct CallFunctionExpression : public Expression {
-        auto get_type() -> ExpressionType const override { return ExpressionType::CallFunctionExpression; }
+        auto get_type() -> ExpressionType override { return ExpressionType::CallFunctionExpression; }
 
         ExpressionPtr function_expr;
         std::vector<ExpressionPtr> parameters;
     };
 
+    struct ConstructorExpression : public Expression {
+        auto get_type() -> ExpressionType override { return ExpressionType::ConstructorExpression; }
+
+        Token type;
+        std::vector<ExpressionPtr> values;
+    };
+
     enum class StatementType : u32 {
-        BreakStatement,
-        ContinueStatement,
-        DiscardStatement,
-        ReturnStatement,
-        DeclareFunctionStatement,
-        DeclareStructStatement,
-        DeclareVariableStatement,
-        MultiStatement,
-        ScopedStatement,
-        BranchStatement,
-        WhileStatement,
-        ForStatement,
-        ExpressionStatement
+        BreakStatement = 0,
+        ContinueStatement = 1,
+        DiscardStatement = 2,
+        ReturnStatement = 3,
+        DeclareFunctionStatement = 4,
+        DeclareStructStatement = 5,
+        DeclareVariableStatement = 6,
+        MultiStatement = 7,
+        ScopedStatement = 8,
+        BranchStatement = 9,
+        WhileStatement = 10,
+        ForStatement = 11,
+        ExpressionStatement = 12,
+        LocationStatement = 13,
     };
 
     struct Statement;
@@ -146,7 +165,7 @@ namespace HAFLSL {
         Statement(Statement&&) noexcept = default;
         virtual ~Statement() = default;
 
-        virtual auto get_type() -> StatementType const = 0;
+        virtual auto get_type() -> StatementType = 0;
 
         Statement& operator=(const Statement&) = delete;
         Statement& operator=(Statement&&) noexcept = default;
@@ -158,7 +177,7 @@ namespace HAFLSL {
     };
 
     struct DeclareStructStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::DeclareStructStatement; }
+        auto get_type() -> StatementType override { return StatementType::DeclareStructStatement; }
 
         std::string_view name;
         std::vector<StructMember> members;
@@ -170,34 +189,34 @@ namespace HAFLSL {
     };
 
     struct DeclareFunctionStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::DeclareFunctionStatement; }
+        auto get_type() -> StatementType override { return StatementType::DeclareFunctionStatement; }
 
         std::string_view name;
         Token returned_type;
         std::vector<Parameter> parameters;
-        // std::vector<> stmts;
+        std::vector<StatementPtr> statements;
     };
 
     struct BreakStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::BreakStatement; }
+        auto get_type() -> StatementType override { return StatementType::BreakStatement; }
     };
 
     struct ContinueStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::ContinueStatement; }
+        auto get_type() -> StatementType override { return StatementType::ContinueStatement; }
     };
 
     struct DiscardStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::DiscardStatement; }
+        auto get_type() -> StatementType override { return StatementType::DiscardStatement; }
     };
 
     struct ReturnStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::ReturnStatement; }
+        auto get_type() -> StatementType override { return StatementType::ReturnStatement; }
     
         ExpressionPtr expr;
     };
 
     struct DeclareVariableStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::DeclareVariableStatement; }
+        auto get_type() -> StatementType override { return StatementType::DeclareVariableStatement; }
 
         std::string_view name;
         Token type;
@@ -205,13 +224,13 @@ namespace HAFLSL {
     };
 
     struct MultiStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::MultiStatement; }
+        auto get_type() -> StatementType override { return StatementType::MultiStatement; }
 
         std::vector<StatementPtr> statements;
     };
 
     struct ScopedStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::ScopedStatement; }
+        auto get_type() -> StatementType override { return StatementType::ScopedStatement; }
 
         StatementPtr statement;
     };
@@ -222,21 +241,21 @@ namespace HAFLSL {
     };
 
     struct BranchStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::BranchStatement; }
+        auto get_type() -> StatementType override { return StatementType::BranchStatement; }
 
         std::vector<ConditionalStatement> conditional_statements;
 		StatementPtr else_statement;
     };
 
     struct WhileStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::WhileStatement; }
+        auto get_type() -> StatementType override { return StatementType::WhileStatement; }
 
         ExpressionPtr condition;
 		StatementPtr statement;
     };
 
     struct ForStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::ForStatement; }
+        auto get_type() -> StatementType override { return StatementType::ForStatement; }
 
         StatementPtr iterable;
         ExpressionPtr condition;
@@ -245,8 +264,17 @@ namespace HAFLSL {
     };
 
     struct ExpressionStatement : public Statement {
-        auto get_type() -> StatementType const override { return StatementType::ExpressionStatement; }
+        auto get_type() -> StatementType override { return StatementType::ExpressionStatement; }
 
         ExpressionPtr expression;
+    };
+
+    struct LocationStatement : public Statement {
+        auto get_type() -> StatementType override { return StatementType::LocationStatement; }
+
+        u32 location;
+        Token way;
+        Token type;
+        std::string_view name;
     };
 }

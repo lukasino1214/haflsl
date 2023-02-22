@@ -26,7 +26,7 @@ namespace HAFLSL {
                     for(u32 i = index + 7 + 1; i < line.size(); i++) {
                         if(b_found) {
                             if(line[i] == '"') {
-                                include_paths.push_back(std::move(line.substr(found, i - found)));
+                                include_paths.push_back(line.substr(found, i - found));
                             }
                         }
 
@@ -140,7 +140,6 @@ namespace HAFLSL {
 
                     std::vector<std::string> splitted_expr;
 
-                    u32 offset = 0;
                     for(u32 i = 0; i < parameters.size(); i++) {
                         usize index = expr.find(parameters[i]);
                         if(index != std::string::npos) {

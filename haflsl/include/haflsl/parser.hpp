@@ -6,12 +6,16 @@
 #include <string>
 
 namespace HAFLSL {
+    struct AST {
+        std::vector<StatementPtr> statements;
+    };
+
     struct Parser {
         Parser() = default;
         ~Parser() = default;
 
-        void parse(const std::vector<Token>& tokens);
-
+        auto parse(const std::vector<Token>& tokens) -> AST;
+        void print_debug_ast(const AST& ast);
 
         struct Context {
             usize token_count = 0;
@@ -46,7 +50,9 @@ namespace HAFLSL {
         auto parse_do_statement() -> StatementPtr;
         auto parse_branch_statement() -> StatementPtr;
         auto parse_while_statement() -> StatementPtr;
-
+        auto parse_layout_statement() -> StatementPtr;
+        
+        auto parse_constructor_expression() -> ExpressionPtr;
         auto parse_expression() -> ExpressionPtr;
         auto parse_bin_op_rhs(i32 expr_precedence, ExpressionPtr lhs) -> ExpressionPtr;
         auto parse_primary_expression() -> ExpressionPtr;
@@ -56,6 +62,10 @@ namespace HAFLSL {
         auto parse_expression_statement() -> ExpressionPtr;
         auto parse_expression_list() -> std::vector<ExpressionPtr>;
         auto get_token_precedence(const TokenType& token) -> i32;
+
+        auto build_identifier_access(ExpressionPtr lhs, ExpressionPtr rhs) -> ExpressionPtr;
+        auto build_index_access(ExpressionPtr lhs, ExpressionPtr rhs) -> ExpressionPtr;
+        auto build_binary(BinaryType binary_type, ExpressionPtr lhs, ExpressionPtr rhs) -> ExpressionPtr;
 
         Context* context;
     };

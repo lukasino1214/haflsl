@@ -13,7 +13,7 @@ namespace HAFLSL {
     struct Compiler {
         //Compiler(const CompilerInfo& info);
 
-        void compile(const std::string& file_path);
+        auto compile(const std::string& file_path) -> std::vector<u32>;
 
       private:
       Compiler(const CompilerInfo& info);

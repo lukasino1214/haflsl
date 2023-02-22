@@ -193,7 +193,7 @@ namespace HAFLSL {
         LEFT_BRACE = 185, // {
         RIGHT_BRACE = 186, // }
         DOT = 187, // .
-        COMMA = 188, //  = 188,
+        COMMA = 188, // ,
         COLON = 189, // :
         EQUAL = 190, // =
         SEMICOLON = 191, // ;
@@ -216,7 +216,8 @@ namespace HAFLSL {
         MEDIUM_PRECISION = 208, // mediump
         LOW_PRECISION = 209, // lowp
         PRECISION = 210, // precision,
-        EOS = 211, // end of the file
+        LOCATION = 211, // location
+        EOS = 212, // end of the file
     };
 
     struct Token {
