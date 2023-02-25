@@ -694,7 +694,7 @@ namespace HAFLSL {
 
     auto Parser::parse_constructor_expression() -> ExpressionPtr {
         auto constructor_expr = std::make_unique<ConstructorExpression>();
-        INFO("{}", Lexer::token_to_string_view(peek()));
+        //INFO("{}", Lexer::token_to_string_view(peek()));
         constructor_expr->type = advance();
         expect(advance(), TokenType::LEFT_PAREN);
         constructor_expr->values = parse_expression_list();

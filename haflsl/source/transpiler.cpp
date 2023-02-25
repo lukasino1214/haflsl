@@ -21,87 +21,6 @@ namespace HAFLSL {
         spirv.data.emplace_back(0); // <-- current_id + 1
         spirv.data.emplace_back(0x00000000); // reserved
 
-        /*spirv.OpCapability(ECapability::Shader);
-
-        u32 shader_lang_import = spirv.register_new_id();
-        std::cout << "shader_lang_import: " << shader_lang_import << std::endl;
-
-        spirv.OpExtInstImport(shader_lang_import, "GLSL.std.450");
-        spirv.OpMemoryModel(EAddressingModel::Logical, EMemoryModel::GLSL450);
-
-        u32 entry_point = spirv.register_new_id();
-        std::cout << "entry_point: " << entry_point << std::endl;
-
-        u32 interface_id = spirv.register_new_id();
-        std::cout << "interface_id: " << interface_id << std::endl;
-
-        spirv.OpEntryPoint(EExecutionModel::Fragment, entry_point, "main", {interface_id});
-        spirv.OpExecutionMode(entry_point, EExecutionMode::OriginUpperLeft);
-        spirv.OpSource(ESourceLanguage::GLSL, 460, 0, "");
-        spirv.OpName(entry_point, "main");
-        spirv.OpName(interface_id, "fragColor");
-        spirv.OpDecorate(interface_id, EDecoration::Location); spirv.data.push_back(0);
-
-        u32 void_type = spirv.register_new_id();
-        std::cout << "void_type: " << void_type << std::endl;
-
-        spirv.OpTypeVoid(void_type);
-
-        u32 main_fn = spirv.register_new_id();
-        std::cout << "main_fn: " << main_fn << std::endl;
-
-        spirv.OpTypeFunction(main_fn, void_type, {});
-
-        u32 float_type = spirv.register_new_id();
-        std::cout << "float_type: " << float_type << std::endl;
-
-        spirv.OpTypeFloat(float_type, 32);
-
-        u32 f32_vec4_type = spirv.register_new_id();
-        std::cout << "f32_vec4_type: " << f32_vec4_type << std::endl;
-
-        spirv.OpTypeVector(f32_vec4_type, float_type, 4);
-
-        u32 f32_vec4_pointer = spirv.register_new_id();
-        std::cout << "f32_vec4_pointer: " << f32_vec4_pointer << std::endl;
-
-        spirv.OpTypePointer(f32_vec4_pointer, EStorageClass::Output, f32_vec4_type);
-        spirv.OpVariable(f32_vec4_pointer, interface_id, EStorageClass::Output, 0);
-
-        u32 color_r = spirv.register_new_id();
-        std::cout << "color_r: " << color_r << std::endl;
-
-        spirv.OpConstant(float_type, color_r, {std::bit_cast<u32>(0.0f)});
-
-        u32 color_g = spirv.register_new_id();
-        std::cout << "color_g: " << color_g << std::endl;
-
-        spirv.OpConstant(float_type, color_g, {std::bit_cast<u32>(0.0f)});
-
-        u32 color_b = spirv.register_new_id();
-        std::cout << "color_b: " << color_b << std::endl;
-
-        spirv.OpConstant(float_type, color_b, {std::bit_cast<u32>(1.0f)});
-
-        u32 color_a = spirv.register_new_id();
-        std::cout << "color_a: " << color_a << std::endl;
-
-        spirv.OpConstant(float_type, color_a, {std::bit_cast<u32>(1.0f)});
-
-        u32 f32_vec4_value = spirv.register_new_id();
-        std::cout << "f32_vec4_value: " << f32_vec4_value << std::endl;
-
-        spirv.OpConstantComposite(f32_vec4_type, f32_vec4_value, {color_r, color_g, color_b, color_a});
-        spirv.OpFunction(void_type, entry_point, EFunctionControl::None, main_fn);
-
-        u32 label = spirv.register_new_id();
-        std::cout << "label: " << label << std::endl;
-
-        spirv.OpLabel(label);
-        spirv.OpStore(interface_id, f32_vec4_value, EMemoryAccess::None);
-        spirv.OpReturn();
-        spirv.OpFunctionEnd();*/
-
         spirv.OpCapability(ECapability::Shader);
         spirv.OpExtInstImport(spirv.register_new_id(), "GLSL.std.450");
         spirv.OpMemoryModel(EAddressingModel::Logical, EMemoryModel::GLSL450);
@@ -505,7 +424,7 @@ namespace HAFLSL {
                                         }
                                     }
 
-                                    INFO("BRO {}", type_id);
+                                    //INFO("BRO {}", type_id);
 
                                     spirv.OpConstantComposite(type_id, id, constants);
                                 }
@@ -528,7 +447,7 @@ namespace HAFLSL {
                     }
                 }
 
-                INFO("{}", return_type_id);
+                //INFO("{}", return_type_id);
 
                 u32 function_type_id = 0;
                 for(auto& type : spv_types) {
@@ -538,7 +457,7 @@ namespace HAFLSL {
                     }
                 }
 
-                INFO("{}", function_type_id);
+                //INFO("{}", function_type_id);
 
                 u32 name_id = 0;
                 for(auto& name : spv_names) {
@@ -548,7 +467,7 @@ namespace HAFLSL {
                     }
                 }
 
-                INFO("{}", name_id);
+                //INFO("{}", name_id);
 
                 spirv.OpFunction(return_type_id, name_id, EFunctionControl::None, function_type_id);
                 spirv.OpLabel(spirv.register_new_id());
@@ -562,7 +481,7 @@ namespace HAFLSL {
 
                             ConstantValueExpression* left_expr = dynamic_cast<ConstantValueExpression*>(assign_expr->left.get()); 
 
-                            INFO("{}", std::get<std::string_view>(left_expr->token.data));
+                            //INFO("{}", std::get<std::string_view>(left_expr->token.data));
 
                             u32 name_id = 0;
                             for(auto& name : spv_names) {
@@ -572,7 +491,7 @@ namespace HAFLSL {
                                 }
                             }
 
-                            INFO("here");
+                            //INFO("here");
 
                             spirv.OpStore(name_id, spv_constant_composites[0].id);
                         }
@@ -602,14 +521,14 @@ namespace HAFLSL {
 
         core.Disassemble(spirv.data, &spirv_disassmble);
 
-        std::cout << spirv_disassmble << std::endl;
+        //std::cout << spirv_disassmble << std::endl;
 
         //throw std::runtime_error("bruh");
 
-        std::ofstream file;
+        /*std::ofstream file;
         file.open("shader.bin", std::ios::binary | std::ios::out);
         file.write(reinterpret_cast<char*>(spirv.data.data()), spirv.data.size() * sizeof(uint32_t));
-        file.close();
+        file.close();*/
 
         return spirv.data;
     }

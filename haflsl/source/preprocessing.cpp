@@ -11,10 +11,10 @@ namespace HAFLSL {
         std::vector<std::string> text;
     };
 
-    auto preprocessing(const std::string& file_path) -> std::string {
-        std::function<std::string(std::string, std::string)> includer;
-        includer = [&includer](const std::string& header_name, const std::string& includer_name) -> std::string {
-            std::string src = read_file_to_string(header_name);
+    auto preprocessing(const std::string& source_code) -> std::string {
+        std::function<std::string(std::string, std::string, bool)> includer;
+        includer = [&includer](const std::string& header_name, const std::string& includer_name, bool header) -> std::string {
+            std::string src = header ? read_file_to_string(header_name) : header_name;
 
             std::vector<std::string> include_paths = {};
             std::vector<std::string> lines = string_to_lines(src);
@@ -41,7 +41,7 @@ namespace HAFLSL {
             std::string included_code = {};
             for(auto& path : include_paths) {
                 if(path == includer_name) { throw std::runtime_error("Recursive including"); }
-                included_code += includer(path, header_name) + "\n";
+                included_code += includer(path, header_name, true) + "\n";
             }
 
             std::string removed_includes = {};
@@ -57,7 +57,7 @@ namespace HAFLSL {
             return code;
         };
 
-        std::string src = includer(file_path, "");
+        std::string src = includer(source_code, "", false);
         std::vector<std::string> src_lines = string_to_lines(src);
 
         std::unordered_map<std::string, std::string> defines;
@@ -185,7 +185,7 @@ namespace HAFLSL {
             }
         }
 
-        INFO("Found defines:");
+        /*INFO("Found defines:");
         for(auto& d : defines) {
             INFO("name: {}", d.first);
             INFO("expr: {}", d.second);
@@ -202,7 +202,7 @@ namespace HAFLSL {
                 expr += m.second.text[i];
             }
             INFO("expr: {}", expr);
-        }
+        }*/
 
         std::vector<std::string> removed_defines_lines = string_to_lines(removed_defines);
         for(u32 i = 0; i < removed_defines_lines.size(); i++) {
@@ -307,5 +307,10 @@ namespace HAFLSL {
 
         std::string code_after_removing_comments = lines_to_string(no_spaces_lines);
         return code_after_removing_comments;
+    }
+
+    auto preprocessing(const std::filesystem::path& file_path) -> std::string {
+        std::string source_code = read_file_to_string(file_path.generic_string());
+        return preprocessing(source_code);
     }
 }
