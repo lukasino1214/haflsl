@@ -4,6 +4,7 @@
 #include <vector>
 #include "logger.hpp"
 #include "token.hpp"
+#include "uuid.hpp"
 
 namespace HAFLSL {
     enum class ExpressionType : u32 {
@@ -33,6 +34,8 @@ namespace HAFLSL {
 
         Expression& operator=(const Expression&) = delete;
         Expression& operator=(Expression&&) noexcept = default;
+
+        UUID uuid = UUID();
     };
 
     struct ConstantValueExpression : public Expression {
@@ -180,6 +183,8 @@ namespace HAFLSL {
 
         Statement& operator=(const Statement&) = delete;
         Statement& operator=(Statement&&) noexcept = default;
+
+        UUID uuid = UUID();
     };
 
     struct StructMember {

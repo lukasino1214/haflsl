@@ -377,6 +377,9 @@ struct App : AppWindow<App> {
                         break;
                     }
                     case HAFLSL::StatementType::DeclareVariableStatement: {
+                        auto* s = dynamic_cast<HAFLSL::DeclareVariableStatement*>(stmt.get());
+                        print_expr(s->expression);
+
                         break;
                     }
                     case HAFLSL::StatementType::MultiStatement: {
@@ -426,15 +429,20 @@ struct App : AppWindow<App> {
         ImGui::Text("Node type: %s", is_stmt ? "Statement" : "Expression");
 
         std::string_view name = "";
+        HAFLSL::UUID uuid(0);
         if(selected_stmt) {
             name = selected_stmt->get_name();
+            uuid = selected_stmt->uuid;
         }
 
         if(selected_expr) {
             name = selected_expr->get_name();
+            uuid = selected_expr->uuid;
         }
 
         ImGui::Text("Node name: %s", name.data());
+        ImGui::Text("Node UUID: %lu", static_cast<u64>(uuid));
+
         if(selected_stmt) {
             switch(selected_stmt->get_type()) {
                 case HAFLSL::StatementType::BreakStatement: {
