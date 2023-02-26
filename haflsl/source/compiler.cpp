@@ -37,7 +37,7 @@ namespace HAFLSL {
         }*/
         Parser parser;
         AST ast = parser.parse(tokens);
-        parser.print_debug_ast(ast);
+        //parser.print_debug_ast(ast);
 
         Transpiler transpiler;
         return transpiler.convert_ast_to_spirv(ast, "main");

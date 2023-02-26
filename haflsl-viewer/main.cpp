@@ -495,6 +495,35 @@ struct App : AppWindow<App> {
         if(selected_expr) {
             switch(selected_expr->get_type()) {
                 case HAFLSL::ExpressionType::ConstantValueExpression: {
+                    auto* e = dynamic_cast<HAFLSL::ConstantValueExpression*>(selected_expr);
+
+                    std::string value = {};
+                    switch(e->token.type) {
+                        case HAFLSL::TokenType::FLOATCONSTANT:
+                            value = std::to_string(std::get<f64>(e->token.data));
+                            break;
+                        case HAFLSL::TokenType::INTCONSTANT:
+                            value = std::to_string(std::get<i64>(e->token.data));
+                            break;
+                        case HAFLSL::TokenType::UINTCONSTANT:
+                            value = std::to_string(std::get<u64>(e->token.data));
+                            break;
+                        case HAFLSL::TokenType::BOOLCONSTANT:
+                            value = std::get<bool>(e->token.data) ? "true": "false";
+                            break;
+                        case HAFLSL::TokenType::DOUBLECONSTANT:
+                            value = std::to_string(std::get<f64>(e->token.data));
+                            break;
+                        case HAFLSL::TokenType::IDENTIFIER:
+                            value = std::string{std::get<std::string_view>(e->token.data)};
+                            break;
+                        default:
+                            value = "wtf";
+                            break;
+                    }
+
+                    ImGui::Text("Type: %s", value.c_str());
+
                     break;
                 }
                 case HAFLSL::ExpressionType::BinaryExpression: {
@@ -513,12 +542,36 @@ struct App : AppWindow<App> {
                     break;
                 }
                 case HAFLSL::ExpressionType::AssignExpression: {
+                    auto* e = dynamic_cast<HAFLSL::AssignExpression*>(selected_expr);
+                    
+                    std::string assign_type = {};
+                    switch(e->type) {
+                        case HAFLSL::AssignType::Simple:                assign_type += "=";  break;
+                        case HAFLSL::AssignType::CompoundAdd:           assign_type += "+=";  break;
+                        case HAFLSL::AssignType::CompoundSubtract:      assign_type += "-=";  break;
+                        case HAFLSL::AssignType::CompoundMultiply:      assign_type += "*=";  break;
+                        case HAFLSL::AssignType::CompoundDivide:        assign_type += "/=";  break;
+                        case HAFLSL::AssignType::CompoundModulo:        assign_type += "%=";  break;
+                        case HAFLSL::AssignType::CompoundBitShiftLeft:  assign_type += "<<=";  break;
+                        case HAFLSL::AssignType::CompoundBitShiftRight: assign_type += ">>=";  break;
+                        case HAFLSL::AssignType::CompoundBitAnd:        assign_type += "&=";  break;
+                        case HAFLSL::AssignType::CompoundBitExOr:       assign_type += "^=";  break;
+                        case HAFLSL::AssignType::CompoundBitInOr:       assign_type += "|=";  break;
+                        default:                                assign_type += "wtf";  break;
+                    }
+                    
+                    ImGui::Text("Type: %s", assign_type.c_str());
+
                     break;
                 }
                 case HAFLSL::ExpressionType::CallFunctionExpression: {
                     break;
                 }
                 case HAFLSL::ExpressionType::ConstructorExpression: {
+                    auto* e = dynamic_cast<HAFLSL::ConstructorExpression*>(selected_expr);
+
+                    ImGui::Text("Type: %s", HAFLSL::Lexer::token_to_string_view(e->type).data());
+
                     break;
                 }
             }
