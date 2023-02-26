@@ -434,6 +434,7 @@ namespace HAFLSL {
         struct SpvConstant {
             TokenType type = {};
             u32 value = {};
+            std::vector<UUID> uuids = {};
             u32 id = {};
         };
 
@@ -481,6 +482,7 @@ namespace HAFLSL {
                                                             case TokenType::FLOATCONSTANT: {
                                                                 if(spv_constant.value == std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)))) {
                                                                     id = spv_constant.id;
+                                                                    spv_constant.uuids.push_back(constant_expr->uuid);
                                                                     values.push_back(spv_constant.value);
                                                                 }
 
@@ -541,6 +543,7 @@ namespace HAFLSL {
                                                     spv_constants.push_back({
                                                         .type = constant_expr->token.type,
                                                         .value = value,
+                                                        .uuids = { constant_expr->uuid },
                                                         .id = id
                                                     });
 
@@ -603,6 +606,79 @@ namespace HAFLSL {
                     if(st->get_type() == StatementType::DeclareVariableStatement) {
                         auto* dc_stmt = dynamic_cast<DeclareVariableStatement*>(st.get());
 
+                        if(dc_stmt->expression->get_type() == ExpressionType::ConstantValueExpression) {
+                            auto* cons_expr = dynamic_cast<ConstantValueExpression*>(dc_stmt->expression.get());
+
+                            bool found = false;
+                            u32 value = 0;
+                            u32 type_id = 0;
+                            if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
+                                for(auto& type : spv_types) {
+                                    if(type.type == TokenType::FLOAT) {
+                                        type_id = type.id;
+                                        break;
+                                    }
+                                }
+
+                                for(auto& spv_constant : spv_constants) {
+
+                                    if(spv_constant.type == TokenType::DOUBLECONSTANT) {
+                                        if(spv_constant.value == value) {
+                                            found = true;
+                                            spv_constant.uuids.push_back(cons_expr->uuid);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
+                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
+                                for(auto& type : spv_types) {
+                                    if(type.type == TokenType::FLOAT) {
+                                        type_id = type.id;
+                                        break;
+                                    }
+                                }
+
+                                for(auto& spv_constant : spv_constants) {
+                                    if(spv_constant.type == TokenType::FLOATCONSTANT) {
+                                        if(spv_constant.value == value) {
+                                            found = true;
+                                            spv_constant.uuids.push_back(cons_expr->uuid);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if(!found) {
+                                if(type_id == 0) {
+                                    if(cons_expr->token.type == TokenType::FLOATCONSTANT || cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                                        type_id = spirv.register_new_id();
+                                        spv_types.push_back({
+                                            .type = TokenType::FLOAT,
+                                            .function = false,
+                                            .id = type_id
+                                        });
+
+                                        spirv.OpTypeFloat(type_id, 32);
+                                    }
+                                }
+
+                                u32 id = spirv.register_new_id();
+                                spv_constants.push_back({
+                                    .type = cons_expr->token.type,
+                                    .value = value,
+                                    .uuids = { cons_expr->uuid },
+                                    .id = id
+                                });
+
+                                spirv.OpConstant(type_id, id, { value });
+                            }
+                        }
+
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstructorExpression) {
                             auto* cons_expr = dynamic_cast<ConstructorExpression*>(dc_stmt->expression.get());
 
@@ -624,6 +700,7 @@ namespace HAFLSL {
                                                         case TokenType::FLOATCONSTANT: {
                                                             if(spv_constant.value == std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)))) {
                                                                 id = spv_constant.id;
+                                                                spv_constant.uuids.push_back(constant_expr->uuid);
                                                                 values.push_back(spv_constant.value);
                                                             }
 
@@ -633,6 +710,7 @@ namespace HAFLSL {
                                                         case TokenType::DOUBLECONSTANT: {
                                                             if(spv_constant.value == std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)))) {
                                                                 id = spv_constant.id;
+                                                                spv_constant.uuids.push_back(constant_expr->uuid);
                                                                 values.push_back(spv_constant.value);
                                                             }
 
@@ -684,6 +762,7 @@ namespace HAFLSL {
                                                 spv_constants.push_back({
                                                     .type = constant_expr->token.type,
                                                     .value = value,
+                                                    .uuids = { constant_expr->uuid },
                                                     .id = id
                                                 });
 
@@ -939,6 +1018,38 @@ namespace HAFLSL {
                                     u32 temp_id = spirv.register_new_id();
                                     spirv.OpLoad(loaded_type_id, temp_id, loaded_id);
                                     spirv.OpStore(id, temp_id);
+                                } else if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                                    u32 constant_id = 0;
+                                    for(auto& spv_constant : spv_constants) {
+                                        for(auto& uuid : spv_constant.uuids) {
+                                            if(uuid == cons_expr->uuid) {
+                                                constant_id = spv_constant.id;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if(constant_id == 0) {
+                                        throw std::runtime_error("dwadwa");
+                                    }
+
+                                    spirv.OpStore(id, constant_id);
+                                } else if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
+                                    u32 constant_id = 0;
+                                    for(auto& spv_constant : spv_constants) {
+                                        for(auto& uuid : spv_constant.uuids) {
+                                            if(uuid == cons_expr->uuid) {
+                                                constant_id = spv_constant.id;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    if(constant_id == 0) {
+                                        throw std::runtime_error("dwadwa");
+                                    }
+
+                                    spirv.OpStore(id, constant_id);
                                 }
                             }
                         }
@@ -1027,6 +1138,40 @@ namespace HAFLSL {
                                 u32 temp_id = spirv.register_new_id();
                                 spirv.OpLoad(loaded_type_id, temp_id, loaded_id);
                                 spirv.OpStore(id, temp_id);
+                            } else if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+
+                                u32 object_id = 0;
+                                for(auto& spv_composite : spv_constants) {
+                                    for(auto& uuid : spv_composite.uuids) {
+                                        if(cons_expr->uuid == uuid) {
+                                            object_id = spv_composite.id;
+                                            break;
+                                        }
+                                    }
+
+                                    if(object_id != 0) {
+                                        break;
+                                    }
+                                }
+
+
+                                spirv.OpStore(id, object_id);
+                            } else if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
+                                u32 constant_id = 0;
+                                for(auto& spv_constant : spv_constants) {
+                                    for(auto& uuid : spv_constant.uuids) {
+                                        if(uuid == cons_expr->uuid) {
+                                            constant_id = spv_constant.id;
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if(constant_id == 0) {
+                                    throw std::runtime_error("dwadwa");
+                                }
+
+                                spirv.OpStore(id, constant_id);
                             }
                         }
                     }
@@ -1055,7 +1200,7 @@ namespace HAFLSL {
 
         core.Disassemble(spirv.data, &spirv_disassmble);
 
-        std::cout << spirv_disassmble << std::endl;
+        //std::cout << spirv_disassmble << std::endl;
 
         //throw std::runtime_error("bruh");
 

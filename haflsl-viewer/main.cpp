@@ -291,7 +291,7 @@ struct App : AppWindow<App> {
 
         std::function<void(std::unique_ptr<HAFLSL::Expression>&)> print_expr;
         print_expr = [&](std::unique_ptr<HAFLSL::Expression>& expr) {
-            if(ImGui::TreeNode(expr->get_name().data())) {
+            if(ImGui::TreeNode((std::string{expr->get_name().data()} + "##" + std::to_string(expr->uuid)).c_str())) {
                 if (ImGui::IsItemClicked()) {
                     is_stmt = false;
                     is_expr = true;
@@ -344,7 +344,7 @@ struct App : AppWindow<App> {
 
         std::function<void(std::unique_ptr<HAFLSL::Statement>&)> print_stmt;
         print_stmt = [&](std::unique_ptr<HAFLSL::Statement>& stmt){
-            if(ImGui::TreeNode(stmt->get_name().data())) {
+            if(ImGui::TreeNode((std::string{stmt->get_name().data()} + "##" + std::to_string(stmt->uuid)).c_str())) {
                 if (ImGui::IsItemClicked()) {
                     is_stmt = true;
                     is_expr = false;
@@ -468,6 +468,10 @@ struct App : AppWindow<App> {
                     break;
                 }
                 case HAFLSL::StatementType::DeclareVariableStatement: {
+                    auto* s = dynamic_cast<HAFLSL::DeclareVariableStatement*>(selected_stmt);
+                    ImGui::Text("Name: %s", std::string{s->name}.c_str());
+                    //ImGui::Text("Type: %s", HAFLSL::Lexer::token_to_string_view(s->type).data());
+                    ImGui::Text("Value: %s", HAFLSL::Lexer::token_to_string_view(s->type).data());
                     break;
                 }
                 case HAFLSL::StatementType::MultiStatement: {
