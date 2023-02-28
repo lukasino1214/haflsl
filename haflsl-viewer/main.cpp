@@ -325,6 +325,8 @@ struct App : AppWindow<App> {
                         break;
                     }
                     case HAFLSL::ExpressionType::CallFunctionExpression: {
+                        auto* e = dynamic_cast<HAFLSL::CallFunctionExpression*>(expr.get());
+                        print_expr(e->function_expr);
                         break;
                     }
                     case HAFLSL::ExpressionType::ConstructorExpression: {
@@ -363,6 +365,9 @@ struct App : AppWindow<App> {
                         break;
                     }
                     case HAFLSL::StatementType::ReturnStatement: {
+                        auto* s = dynamic_cast<HAFLSL::ReturnStatement*>(stmt.get());
+                        print_expr(s->expr);
+
                         break;
                     }
                     case HAFLSL::StatementType::DeclareFunctionStatement: {

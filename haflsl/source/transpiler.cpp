@@ -156,7 +156,6 @@ namespace HAFLSL {
         }
 
         for(auto& interface : spv_interfaces) {
-            //spirv.OpName(name.id, name.name);
             spirv.OpDecorate(interface.id, EDecoration::Location); spirv.data.push_back(interface.location);
         }
 
@@ -201,312 +200,269 @@ namespace HAFLSL {
                 return fn_id;
             }
 
+            id = spirv.register_new_id();
+            
             switch(token.type) {
                 case TokenType::BOOL: {
-                    id = spirv.register_new_id();
                     spirv.OpTypeBool(id);
                     break;   
                 }
 
                 case TokenType::FLOAT: {
-                    id = spirv.register_new_id();
                     spirv.OpTypeFloat(id, 32);
                     break;   
                 }
 
                 case TokenType::INT: {
-                    id = spirv.register_new_id();
                     spirv.OpTypeInt(id, 32, 1);
                     break;   
                 }
 
                 case TokenType::UINT: {
-                    id = spirv.register_new_id();
                     spirv.OpTypeInt(id, 32, 0);
                     break;   
                 }
 
                 case TokenType::DOUBLE: {
-                    id = spirv.register_new_id();
                     spirv.OpTypeFloat(id, 32);
                     break;   
                 }
 
                 case TokenType::BVEC2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::BOOL }, false);
                     spirv.OpTypeVector(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::BVEC3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::BOOL }, false);
                     spirv.OpTypeVector(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::BVEC4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::BOOL }, false);
                     spirv.OpTypeVector(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::IVEC2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::INT }, false);
                     spirv.OpTypeVector(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::IVEC3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::INT }, false);
                     spirv.OpTypeVector(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::IVEC4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::INT }, false);
                     spirv.OpTypeVector(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::UVEC2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::UINT }, false);
                     spirv.OpTypeVector(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::UVEC3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::UINT }, false);
                     spirv.OpTypeVector(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::UVEC4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::UINT }, false);
                     spirv.OpTypeVector(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::VEC2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::FLOAT }, false);
                     spirv.OpTypeVector(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::VEC3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::FLOAT }, false);
                     spirv.OpTypeVector(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::VEC4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::FLOAT }, false);
                     spirv.OpTypeVector(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::MAT2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::MAT3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::MAT4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::MAT2X2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::MAT2X3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::MAT2X4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::MAT3X2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::MAT3X3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::MAT3X4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::MAT4X2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::MAT4X3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::MAT4X4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::VEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::DVEC2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::FLOAT}, false);
                     spirv.OpTypeVector(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::DVEC3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::FLOAT}, false);
                     spirv.OpTypeVector(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::DVEC4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::FLOAT}, false);
                     spirv.OpTypeVector(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::DMAT2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::DMAT3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::DMAT4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::DMAT2X2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::DMAT2X3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::DMAT2X4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 2);
                     break;   
                 }
 
                 case TokenType::DMAT3X2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::DMAT3X3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::DMAT3X4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 3);
                     break;   
                 }
 
                 case TokenType::DMAT4X2: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC2 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::DMAT4X3: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC3 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::DMAT4X4: {
-                    id = spirv.register_new_id();
                     u32 type_id = find_or_register_type({ .type = TokenType::DVEC4 }, false);
                     spirv.OpTypeMatrix(id, type_id, 4);
                     break;   
                 }
 
                 case TokenType::VOID: {
-                    id = spirv.register_new_id();
                     spirv.OpTypeVoid(id);
                     break;   
                 }
@@ -990,6 +946,78 @@ namespace HAFLSL {
                                 }
                             }
                         }
+                    } else if(st->get_type() == StatementType::ReturnStatement){
+                        auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
+                        if(rt_stmt->expr->get_type() == ExpressionType::ConstantValueExpression) {
+                            auto* cons_expr = dynamic_cast<ConstantValueExpression*>(rt_stmt->expr.get());
+                            
+                            bool found = false;
+                            u32 value = 0;
+                            u32 type_id = find_or_register_type(Token { .type = cons_expr->token.type}, false);
+                            if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
+
+                                for(auto& spv_constant : spv_constants) {
+                                    if(spv_constant.type == TokenType::DOUBLECONSTANT) {
+                                        if(spv_constant.value == value) {
+                                            found = true;
+                                            spv_constant.uuids.push_back(cons_expr->uuid);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
+                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
+                                for(auto& spv_constant : spv_constants) {
+                                    if(spv_constant.type == TokenType::FLOATCONSTANT) {
+                                        if(spv_constant.value == value) {
+                                            found = true;
+                                            spv_constant.uuids.push_back(cons_expr->uuid);
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+
+                            if(!found) {
+                                if(type_id == 0) {
+                                    if(cons_expr->token.type == TokenType::FLOATCONSTANT || cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                                        type_id = spirv.register_new_id();
+                                        spv_types.push_back({
+                                            .type = TokenType::FLOAT,
+                                            .function = false,
+                                            .id = type_id
+                                        });
+
+                                        spirv.OpTypeFloat(type_id, 32);
+                                    }
+                                }
+
+                                u32 id = spirv.register_new_id();
+                                spv_constants.push_back({
+                                    .type = cons_expr->token.type,
+                                    .value = value,
+                                    .uuids = { cons_expr->uuid },
+                                    .id = id
+                                });
+
+                                spirv.OpConstant(type_id, id, { value });
+                            }
+                            /*u32 value_id = 0;
+                            for(auto& spv_constant : spv_constants) {
+                                for(auto& uuid : spv_constant.uuids) {
+                                    if(uuid == rt_stmt->expr->uuid) {
+                                        value_id = spv_constant.id;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if(value_id == 0) { throw std::runtime_error("bozo"); }
+                            spirv.OpReturnValue(value_id);*/
+                        }
                     }
                 }
             }
@@ -1275,12 +1303,48 @@ namespace HAFLSL {
                                 spirv.OpStore(id, constant_id);
                             }
                         }
+
+                        if(dc_stmt->expression->get_type() == ExpressionType::CallFunctionExpression) {
+                            auto* cfn_expr = dynamic_cast<CallFunctionExpression*>(dc_stmt->expression.get());
+                            auto* cons_expr = dynamic_cast<ConstantValueExpression*>(cfn_expr->function_expr.get());
+                            u32 function_id = 0;
+                            for(auto& name : spv_names) {
+                                if(name.name == std::get<std::string_view>(cons_expr->token.data)) {
+                                    function_id = name.id;
+                                    break;
+                                }
+                            }
+
+                            u32 type_id = find_or_register_type(Token { .type = dc_stmt->type.type}, false);
+                            
+                            u32 result_id = spirv.register_new_id();
+                            spirv.OpFunctionCall(type_id, result_id, function_id);   
+                            spirv.OpStore(id, result_id);
+                        
+                        }
+                    } else if(st->get_type() == StatementType::ReturnStatement){
+                        auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
+                        if(rt_stmt->expr->get_type() == ExpressionType::ConstantValueExpression) {
+                            u32 value_id = 0;
+                            for(auto& spv_constant : spv_constants) {
+                                for(auto& uuid : spv_constant.uuids) {
+                                    if(uuid == rt_stmt->expr->uuid) {
+                                        value_id = spv_constant.id;
+                                        break;
+                                    }
+                                }
+                            }
+
+                            if(value_id == 0) { throw std::runtime_error("bozo"); }
+                            spirv.OpReturnValue(value_id);
+                        }
                     }
                 }
 
                 if(fn_stmt->returned_type.type == TokenType::VOID) {
                     spirv.OpReturn();
                 }
+
                 spirv.OpFunctionEnd();
             }
         }
