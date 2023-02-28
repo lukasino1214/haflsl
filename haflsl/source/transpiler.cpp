@@ -653,18 +653,18 @@ namespace HAFLSL {
             return {type, value};
         };
 
-        struct NewSpvConstant {
+        struct SpvConstant {
             TokenType type = {};
             std::vector<u32> values = {};
             std::vector<UUID> uuids = {};
             u32 id = {};
         };
 
-        std::vector<NewSpvConstant> new_spv_constants = {};
+        std::vector<SpvConstant> spv_constants = {};
 
         std::function<u32(const std::unique_ptr<Expression>& expr)> find_or_register_constant;
-        find_or_register_constant = [&find_or_register_constant, &spirv, &new_spv_constants, &spv_types, &find_or_register_type, &convert_value_into_bits](const std::unique_ptr<Expression>& expr) -> u32 {
-            for(auto& spv_constant : new_spv_constants) {
+        find_or_register_constant = [&find_or_register_constant, &spirv, &spv_constants, &spv_types, &find_or_register_type, &convert_value_into_bits](const std::unique_ptr<Expression>& expr) -> u32 {
+            for(auto& spv_constant : spv_constants) {
                 for(auto& uuid : spv_constant.uuids) {
                     if(expr->uuid == uuid) {
                         return spv_constant.id;
@@ -691,7 +691,7 @@ namespace HAFLSL {
                 throw std::runtime_error("wrong type of expression");
             }
             
-            for(auto& spv_constant : new_spv_constants) {
+            for(auto& spv_constant : spv_constants) {
                 if(spv_constant.type == type) {
                     for(u32 i = 0; i < spv_constant.values.size(); i++) {
                         if(values[i] != spv_constant.values[i]) {
@@ -743,7 +743,7 @@ namespace HAFLSL {
                 throw std::runtime_error("wrong type of expression");
             }
 
-            new_spv_constants.push_back({
+            spv_constants.push_back({
                 .type = type,
                 .values = values,
                 .uuids = { expr->uuid },
@@ -752,24 +752,6 @@ namespace HAFLSL {
 
             return id;
         };
-
-        struct SpvConstant {
-            TokenType type = {};
-            u32 value = {};
-            std::vector<UUID> uuids = {};
-            u32 id = {};
-        };
-
-        std::vector<SpvConstant> spv_constants = {};
-
-        struct SpvConstantComposite {
-            TokenType type = {};
-            std::vector<u32> values = {};
-            std::vector<UUID> uuids = {};
-            u32 id = {};
-        };
-
-        std::vector<SpvConstantComposite> spv_constant_composites = {};
 
         // CONSTANTS
         for(auto& statement : ast.statements) {
