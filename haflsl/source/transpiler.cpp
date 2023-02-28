@@ -612,6 +612,147 @@ namespace HAFLSL {
             }
         }
 
+        auto convert_value_into_bits = [](const Token& token) -> std::pair<TokenType, u32> {
+            TokenType type = token.type;
+            u32 value = 0;
+
+            switch(type) {
+                case TokenType::FLOATCONSTANT: { 
+                    type = TokenType::FLOAT; 
+                    value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(token.data)));
+                    break;
+                }
+
+                case TokenType::INTCONSTANT: { 
+                    type = TokenType::INT; 
+                    value = std::bit_cast<u32>(static_cast<i32>(std::get<i64>(token.data)));
+                    break;
+                }
+
+                case TokenType::UINTCONSTANT: { 
+                    type = TokenType::UINT; 
+                    value = std::bit_cast<u32>(static_cast<u32>(std::get<u64>(token.data)));
+                    break;
+                }
+
+                case TokenType::BOOLCONSTANT: { 
+                    type = TokenType::BOOL; 
+                    value = std::get<bool>(token.data) ? 1 : 0;
+                    break;
+                }
+
+                case TokenType::DOUBLECONSTANT: { 
+                    type = TokenType::FLOAT; 
+                    value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(token.data)));
+                    break;
+                }
+
+                default: { throw std::runtime_error("not handled type"); } 
+            }
+
+            return {type, value};
+        };
+
+        struct NewSpvConstant {
+            TokenType type = {};
+            std::vector<u32> values = {};
+            std::vector<UUID> uuids = {};
+            u32 id = {};
+        };
+
+        std::vector<NewSpvConstant> new_spv_constants = {};
+
+        std::function<u32(const std::unique_ptr<Expression>& expr)> find_or_register_constant;
+        find_or_register_constant = [&find_or_register_constant, &spirv, &new_spv_constants, &spv_types, &find_or_register_type, &convert_value_into_bits](const std::unique_ptr<Expression>& expr) -> u32 {
+            for(auto& spv_constant : new_spv_constants) {
+                for(auto& uuid : spv_constant.uuids) {
+                    if(expr->uuid == uuid) {
+                        return spv_constant.id;
+                    }
+                }
+            }
+
+            TokenType type = {};
+            std::vector<u32> values = {};
+            if(expr->get_type() == ExpressionType::ConstantValueExpression) {
+                auto* e = dynamic_cast<ConstantValueExpression*>(expr.get());
+                type = e->token.type;
+                auto pair = convert_value_into_bits(e->token);
+                type = pair.first;
+                values.push_back(pair.second);
+            } else if(expr->get_type() == ExpressionType::ConstructorExpression) {
+                auto* e = dynamic_cast<ConstructorExpression*>(expr.get());
+                type = e->type.type;
+                for(auto& value : e->values) {
+                    auto* v = dynamic_cast<ConstantValueExpression*>(value.get());
+                    values.push_back(convert_value_into_bits(v->token).second);
+                }
+            } else {
+                throw std::runtime_error("wrong type of expression");
+            }
+            
+            for(auto& spv_constant : new_spv_constants) {
+                if(spv_constant.type == type) {
+                    for(u32 i = 0; i < spv_constant.values.size(); i++) {
+                        if(values[i] != spv_constant.values[i]) {
+                            break;
+                        }
+
+                        if(i == spv_constant.values.size() - 1) {
+                            spv_constant.uuids.push_back(expr->uuid);
+                            return spv_constant.id;
+                        }
+                    }
+                }
+            }
+
+            u32 id = spirv.register_new_id();
+            if(expr->get_type() == ExpressionType::ConstantValueExpression) {
+                u32 type_id = find_or_register_type({ .type = type }, false);
+
+                if(type != TokenType::BOOL) {
+                    spirv.OpConstant(type_id, id, values);
+                } else {
+                    if(values[0]) {
+                        spirv.OpConstantTrue(type_id, id);
+                    } else if(!values[0]) {
+                        spirv.OpConstantFalse(type_id, id);
+                    } else {
+                        throw std::runtime_error("wrong type of value");
+                    }
+                }
+
+            } else if(expr->get_type() == ExpressionType::ConstructorExpression) {
+                auto* e = dynamic_cast<ConstructorExpression*>(expr.get());
+                type = e->type.type;
+
+                std::vector<u32> ids = {};
+                for(auto& v : e->values) {
+                    ids.push_back(find_or_register_constant(v));
+                }
+
+                switch(type) {
+                    case TokenType::VEC4: {
+                        u32 type_id = find_or_register_type({ .type = TokenType::VEC4 }, false);
+                        spirv.OpConstantComposite(type_id, id, ids);
+                        break;
+                    }
+                    default: {}
+                }
+            } else {
+                throw std::runtime_error("wrong type of expression");
+            }
+
+            new_spv_constants.push_back({
+                .type = type,
+                .values = values,
+                .uuids = { expr->uuid },
+                .id = id,
+            });
+
+            return id;
+        };
+
         struct SpvConstant {
             TokenType type = {};
             u32 value = {};
@@ -643,124 +784,7 @@ namespace HAFLSL {
                             AssignExpression* assign_expr = dynamic_cast<AssignExpression*>(expr_stmt->expression.get());
 
                             if(assign_expr->right->get_type() == ExpressionType::ConstructorExpression) {
-                                ConstructorExpression* cons_expr = dynamic_cast<ConstructorExpression*>(assign_expr->right.get());
-
-                                switch(cons_expr->type.type) {
-                                    case TokenType::VEC4: {
-                                        std::vector<u32> constants = {};
-                                        std::vector<u32> values = {};
-
-                                        for(auto& constant : cons_expr->values) {
-                                            if(constant->get_type() == ExpressionType::ConstantValueExpression) {
-                                                ConstantValueExpression* constant_expr = dynamic_cast<ConstantValueExpression*>(constant.get());
-
-                                                u32 id = 0;
-                                                u32 type_id = 0;
-
-                                                for(auto& spv_constant : spv_constants) {
-                                                    if(spv_constant.type == constant_expr->token.type) {
-                                                        switch(constant_expr->token.type) {
-                                                            case TokenType::FLOATCONSTANT: {
-                                                                if(spv_constant.value == std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)))) {
-                                                                    id = spv_constant.id;
-                                                                    spv_constant.uuids.push_back(constant_expr->uuid);
-                                                                    values.push_back(spv_constant.value);
-                                                                }
-
-                                                                break;
-                                                            }
-
-                                                            case TokenType::DOUBLECONSTANT: {
-                                                                if(spv_constant.value == std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)))) {
-                                                                    id = spv_constant.id;
-                                                                    values.push_back(spv_constant.value);
-                                                                }
-
-                                                                break;
-                                                            }
-
-                                                            default: {
-                                                                throw std::runtime_error("bruh");
-                                                            }
-                                                        }
-                                                    }
-                                                }
-
-                                                if(id == 0) {
-                                                    u32 value = 0;
-                                                    type_id = find_or_register_type(Token { .type = constant_expr->token.type}, false);
-                                                    switch(constant_expr->token.type) {
-                                                        case TokenType::FLOATCONSTANT: {
-                                                            value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)));
-
-                                                            break;
-                                                        }
-
-                                                        case TokenType::DOUBLECONSTANT: {
-                                                            value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)));
-
-                                                            break;
-                                                        }
-
-                                                        default: {
-                                                            throw std::runtime_error("bruh here");
-                                                        }
-                                                    }
-
-                                                    id = spirv.register_new_id();
-                                                    spv_constants.push_back({
-                                                        .type = constant_expr->token.type,
-                                                        .value = value,
-                                                        .uuids = { constant_expr->uuid },
-                                                        .id = id
-                                                    });
-
-                                                    values.push_back(value);
-
-                                                    spirv.OpConstant(type_id, id, { value });
-                                                }
-
-                                                constants.push_back(id);
-                                            }
-                                        }
-
-                                        bool found = false;
-                                        for(auto& spv_composite : spv_constant_composites) {
-                                            if(cons_expr->type.type == spv_composite.type) {
-                                                for(u32 i = 0; i < spv_composite.values.size(); i++) {
-                                                    if(values[i] != spv_composite.values[i]) {
-                                                        break;
-                                                    }
-
-                                                    if(i == spv_composite.values.size() - 1) {
-                                                        found = true;
-                                                        spv_composite.uuids.push_back(cons_expr->uuid);
-                                                    }
-                                                }
-                                            }
-                                        }
-
-                                        if(!found) {
-                                            u32 id = spirv.register_new_id();
-                                            spv_constant_composites.push_back({
-                                                .type = cons_expr->type.type,
-                                                .values = values,
-                                                .uuids = { cons_expr->uuid },
-                                                .id = id
-                                            });
-
-                                            u32 type_id = find_or_register_type(Token { .type = cons_expr->type.type}, false);
-
-                                            spirv.OpConstantComposite(type_id, id, constants);
-                                        }
-
-                                        break;
-                                    }
-
-                                    default: {
-                                        throw std::runtime_error("bruh dadwa");
-                                    }
-                                }
+                                u32 constant_id = find_or_register_constant(assign_expr->right);
                             }
                         }
                     }
@@ -769,254 +793,16 @@ namespace HAFLSL {
                         auto* dc_stmt = dynamic_cast<DeclareVariableStatement*>(st.get());
 
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstantValueExpression) {
-                            auto* cons_expr = dynamic_cast<ConstantValueExpression*>(dc_stmt->expression.get());
-
-                            bool found = false;
-                            u32 value = 0;
-                            u32 type_id = find_or_register_type(Token { .type = cons_expr->token.type}, false);
-                            if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
-                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
-
-                                for(auto& spv_constant : spv_constants) {
-                                    if(spv_constant.type == TokenType::DOUBLECONSTANT) {
-                                        if(spv_constant.value == value) {
-                                            found = true;
-                                            spv_constant.uuids.push_back(cons_expr->uuid);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
-                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
-                                for(auto& spv_constant : spv_constants) {
-                                    if(spv_constant.type == TokenType::FLOATCONSTANT) {
-                                        if(spv_constant.value == value) {
-                                            found = true;
-                                            spv_constant.uuids.push_back(cons_expr->uuid);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if(!found) {
-                                if(type_id == 0) {
-                                    if(cons_expr->token.type == TokenType::FLOATCONSTANT || cons_expr->token.type == TokenType::DOUBLECONSTANT) {
-                                        type_id = spirv.register_new_id();
-                                        spv_types.push_back({
-                                            .type = TokenType::FLOAT,
-                                            .function = false,
-                                            .id = type_id
-                                        });
-
-                                        spirv.OpTypeFloat(type_id, 32);
-                                    }
-                                }
-
-                                u32 id = spirv.register_new_id();
-                                spv_constants.push_back({
-                                    .type = cons_expr->token.type,
-                                    .value = value,
-                                    .uuids = { cons_expr->uuid },
-                                    .id = id
-                                });
-
-                                spirv.OpConstant(type_id, id, { value });
-                            }
+                            u32 constant_id = find_or_register_constant(dc_stmt->expression);
                         }
 
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstructorExpression) {
-                            auto* cons_expr = dynamic_cast<ConstructorExpression*>(dc_stmt->expression.get());
-
-                            switch(cons_expr->type.type) {
-                                case TokenType::VEC4: {
-                                    std::vector<u32> constants = {};
-                                    std::vector<u32> values = {};
-
-                                    for(auto& constant : cons_expr->values) {
-                                        if(constant->get_type() == ExpressionType::ConstantValueExpression) {
-                                            ConstantValueExpression* constant_expr = dynamic_cast<ConstantValueExpression*>(constant.get());
-
-                                            u32 id = 0;
-                                            u32 type_id = 0;
-
-                                            for(auto& spv_constant : spv_constants) {
-                                                if(spv_constant.type == constant_expr->token.type) {
-                                                    switch(constant_expr->token.type) {
-                                                        case TokenType::FLOATCONSTANT: {
-                                                            if(spv_constant.value == std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)))) {
-                                                                id = spv_constant.id;
-                                                                spv_constant.uuids.push_back(constant_expr->uuid);
-                                                                values.push_back(spv_constant.value);
-                                                            }
-
-                                                            break;
-                                                        }
-
-                                                        case TokenType::DOUBLECONSTANT: {
-                                                            if(spv_constant.value == std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)))) {
-                                                                id = spv_constant.id;
-                                                                spv_constant.uuids.push_back(constant_expr->uuid);
-                                                                values.push_back(spv_constant.value);
-                                                            }
-
-                                                            break;
-                                                        }
-
-                                                        default: {
-                                                            throw std::runtime_error("bruh");
-                                                        }
-                                                    }
-                                                }
-                                            }
-
-                                            if(id == 0) {
-                                                u32 value = 0;
-                                                type_id = find_or_register_type(Token { .type = constant_expr->token.type}, false);
-
-                                                switch(constant_expr->token.type) {
-                                                    case TokenType::FLOATCONSTANT: {
-                                                        value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)));
-                                                        break;
-                                                    }
-
-                                                    case TokenType::DOUBLECONSTANT: {
-                                                        value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(constant_expr->token.data)));
-                                                        break;
-                                                    }
-
-                                                    default: {
-                                                        throw std::runtime_error("bruh here");
-                                                    }
-                                                }
-
-                                                id = spirv.register_new_id();
-                                                spv_constants.push_back({
-                                                    .type = constant_expr->token.type,
-                                                    .value = value,
-                                                    .uuids = { constant_expr->uuid },
-                                                    .id = id
-                                                });
-
-                                                values.push_back(value);
-                                                spirv.OpConstant(type_id, id, { value });
-                                            }
-
-                                            constants.push_back(id);
-                                        }
-                                    }
-
-                                    bool found = false;
-                                    for(auto& spv_composite : spv_constant_composites) {
-                                        if(cons_expr->type.type == spv_composite.type) {
-                                            for(u32 i = 0; i < spv_composite.values.size(); i++) {
-                                                if(values[i] != spv_composite.values[i]) {
-                                                    break;
-                                                }
-
-                                                if(i == spv_composite.values.size() - 1) {
-                                                    found = true;
-                                                    spv_composite.uuids.push_back(cons_expr->uuid);
-                                                }
-                                            }
-                                        }
-                                    }
-
-                                    if(!found) {
-                                        u32 id = spirv.register_new_id();
-                                        spv_constant_composites.push_back({
-                                            .type = cons_expr->type.type,
-                                            .values = values,
-                                            .uuids = { cons_expr->uuid },
-                                            .id = id
-                                        });
-
-                                        u32 type_id = find_or_register_type(Token { .type = cons_expr->type.type}, false);
-
-                                        spirv.OpConstantComposite(type_id, id, constants);
-                                    }
-
-                                    break;
-                                }
-
-                                default: {
-                                    throw std::runtime_error("bruh dadwa");
-                                }
-                            }
+                            u32 constant_id = find_or_register_constant(dc_stmt->expression);
                         }
                     } else if(st->get_type() == StatementType::ReturnStatement){
                         auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
                         if(rt_stmt->expr->get_type() == ExpressionType::ConstantValueExpression) {
-                            auto* cons_expr = dynamic_cast<ConstantValueExpression*>(rt_stmt->expr.get());
-                            
-                            bool found = false;
-                            u32 value = 0;
-                            u32 type_id = find_or_register_type(Token { .type = cons_expr->token.type}, false);
-                            if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
-                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
-
-                                for(auto& spv_constant : spv_constants) {
-                                    if(spv_constant.type == TokenType::DOUBLECONSTANT) {
-                                        if(spv_constant.value == value) {
-                                            found = true;
-                                            spv_constant.uuids.push_back(cons_expr->uuid);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
-                                value = std::bit_cast<u32>(static_cast<f32>(std::get<f64>(cons_expr->token.data)));
-                                for(auto& spv_constant : spv_constants) {
-                                    if(spv_constant.type == TokenType::FLOATCONSTANT) {
-                                        if(spv_constant.value == value) {
-                                            found = true;
-                                            spv_constant.uuids.push_back(cons_expr->uuid);
-                                            break;
-                                        }
-                                    }
-                                }
-                            }
-
-                            if(!found) {
-                                if(type_id == 0) {
-                                    if(cons_expr->token.type == TokenType::FLOATCONSTANT || cons_expr->token.type == TokenType::DOUBLECONSTANT) {
-                                        type_id = spirv.register_new_id();
-                                        spv_types.push_back({
-                                            .type = TokenType::FLOAT,
-                                            .function = false,
-                                            .id = type_id
-                                        });
-
-                                        spirv.OpTypeFloat(type_id, 32);
-                                    }
-                                }
-
-                                u32 id = spirv.register_new_id();
-                                spv_constants.push_back({
-                                    .type = cons_expr->token.type,
-                                    .value = value,
-                                    .uuids = { cons_expr->uuid },
-                                    .id = id
-                                });
-
-                                spirv.OpConstant(type_id, id, { value });
-                            }
-                            /*u32 value_id = 0;
-                            for(auto& spv_constant : spv_constants) {
-                                for(auto& uuid : spv_constant.uuids) {
-                                    if(uuid == rt_stmt->expr->uuid) {
-                                        value_id = spv_constant.id;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if(value_id == 0) { throw std::runtime_error("bozo"); }
-                            spirv.OpReturnValue(value_id);*/
+                            u32 constant_id = find_or_register_constant(rt_stmt->expr);
                         }
                     }
                 }
@@ -1131,19 +917,7 @@ namespace HAFLSL {
                             }
 
                             if(assign_expr->right->get_type() == ExpressionType::ConstructorExpression) {
-                                u32 object_id = 0;
-                                for(auto& spv_composite : spv_constant_composites) {
-                                    for(auto& uuid : spv_composite.uuids) {
-                                        if(assign_expr->right->uuid == uuid) {
-                                            object_id = spv_composite.id;
-                                            break;
-                                        }
-                                    }
-
-                                    if(object_id != 0) {
-                                        break;
-                                    }
-                                }
+                                u32 object_id = find_or_register_constant(assign_expr->right);
                                 
                                 spirv.OpStore(id, object_id);
                             }
@@ -1175,37 +949,13 @@ namespace HAFLSL {
                                     spirv.OpLoad(loaded_type_id, temp_id, loaded_id);
                                     spirv.OpStore(id, temp_id);
                                 } else if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
-                                    u32 constant_id = 0;
-                                    for(auto& spv_constant : spv_constants) {
-                                        for(auto& uuid : spv_constant.uuids) {
-                                            if(uuid == cons_expr->uuid) {
-                                                constant_id = spv_constant.id;
-                                                break;
-                                            }
-                                        }
-                                    }
+                                    u32 value_id = find_or_register_constant(assign_expr->right);
 
-                                    if(constant_id == 0) {
-                                        throw std::runtime_error("dwadwa");
-                                    }
-
-                                    spirv.OpStore(id, constant_id);
+                                    spirv.OpStore(id, value_id);
                                 } else if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
-                                    u32 constant_id = 0;
-                                    for(auto& spv_constant : spv_constants) {
-                                        for(auto& uuid : spv_constant.uuids) {
-                                            if(uuid == cons_expr->uuid) {
-                                                constant_id = spv_constant.id;
-                                                break;
-                                            }
-                                        }
-                                    }
+                                    u32 value_id = find_or_register_constant(assign_expr->right);
 
-                                    if(constant_id == 0) {
-                                        throw std::runtime_error("dwadwa");
-                                    }
-
-                                    spirv.OpStore(id, constant_id);
+                                    spirv.OpStore(id, value_id);
                                 }
                             }
                         }
@@ -1221,24 +971,9 @@ namespace HAFLSL {
                         }
 
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstructorExpression) {
-                            auto* cons_expr = dynamic_cast<ConstructorExpression*>(dc_stmt->expression.get());
+                            u32 value_id = find_or_register_constant(dc_stmt->expression);
 
-                            u32 object_id = 0;
-                            for(auto& spv_composite : spv_constant_composites) {
-                                for(auto& uuid : spv_composite.uuids) {
-                                    if(cons_expr->uuid == uuid) {
-                                        object_id = spv_composite.id;
-                                        break;
-                                    }
-                                }
-
-                                if(object_id != 0) {
-                                    break;
-                                }
-                            }
-
-
-                            spirv.OpStore(id, object_id);
+                            spirv.OpStore(id, value_id);
                         }
 
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstantValueExpression) {
@@ -1267,40 +1002,14 @@ namespace HAFLSL {
                                 u32 temp_id = spirv.register_new_id();
                                 spirv.OpLoad(loaded_type_id, temp_id, loaded_id);
                                 spirv.OpStore(id, temp_id);
-                            } else if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                            } else if(cons_expr->token.type == TokenType::FLOATCONSTANT || cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                                u32 value_id = find_or_register_constant(dc_stmt->expression);
 
-                                u32 object_id = 0;
-                                for(auto& spv_composite : spv_constants) {
-                                    for(auto& uuid : spv_composite.uuids) {
-                                        if(cons_expr->uuid == uuid) {
-                                            object_id = spv_composite.id;
-                                            break;
-                                        }
-                                    }
-
-                                    if(object_id != 0) {
-                                        break;
-                                    }
-                                }
-
-
-                                spirv.OpStore(id, object_id);
-                            } else if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
-                                u32 constant_id = 0;
-                                for(auto& spv_constant : spv_constants) {
-                                    for(auto& uuid : spv_constant.uuids) {
-                                        if(uuid == cons_expr->uuid) {
-                                            constant_id = spv_constant.id;
-                                            break;
-                                        }
-                                    }
-                                }
-
-                                if(constant_id == 0) {
+                                if(value_id == 0) {
                                     throw std::runtime_error("dwadwa");
                                 }
 
-                                spirv.OpStore(id, constant_id);
+                                spirv.OpStore(id, value_id);
                             }
                         }
 
@@ -1325,17 +1034,8 @@ namespace HAFLSL {
                     } else if(st->get_type() == StatementType::ReturnStatement){
                         auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
                         if(rt_stmt->expr->get_type() == ExpressionType::ConstantValueExpression) {
-                            u32 value_id = 0;
-                            for(auto& spv_constant : spv_constants) {
-                                for(auto& uuid : spv_constant.uuids) {
-                                    if(uuid == rt_stmt->expr->uuid) {
-                                        value_id = spv_constant.id;
-                                        break;
-                                    }
-                                }
-                            }
+                            u32 value_id = find_or_register_constant(rt_stmt->expr);
 
-                            if(value_id == 0) { throw std::runtime_error("bozo"); }
                             spirv.OpReturnValue(value_id);
                         }
                     }
