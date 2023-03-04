@@ -4,6 +4,7 @@
 #include <haflsl/code_buffer.hpp>
 #include <iostream>
 
+#include <memory>
 #include <spirv-tools/libspirv.h>
 #include <spirv-tools/libspirv.hpp>
 #include <spirv-tools/optimizer.hpp>
@@ -11,6 +12,7 @@
 #include <string_view>
 #include <bit>
 #include <haflsl/lexer.hpp>
+#include <variant>
 
 namespace HAFLSL {
     auto Transpiler::convert_ast_to_spirv(const AST& ast, const std::string_view& entrypoint_name) -> std::vector<u32> {
@@ -615,7 +617,133 @@ namespace HAFLSL {
             }
         }
 
-        auto convert_value_into_bits = [](const Token& token) -> std::pair<TokenType, u32> {
+        using binary_result = std::variant<std::monostate, f32, i32, u32, f64>;
+        std::function<Token(Expression* expr)> visit_binary_expression;
+        visit_binary_expression = [&visit_binary_expression](Expression* expr) -> Token {
+            //INFO("{}", expr->get_name());
+            if(expr->get_type() == ExpressionType::BinaryExpression) {
+                auto* bin_expr = dynamic_cast<BinaryExpression*>(expr);
+
+                Token left_result = visit_binary_expression(bin_expr->left.get());
+                //INFO("{}", std::get<i32>(left_result));
+                Token right_result = visit_binary_expression(bin_expr->right.get());
+                //INFO("{}", std::get<i32>(right_result));
+
+                if(!std::holds_alternative<std::monostate>(left_result.data) && !std::holds_alternative<std::monostate>(right_result.data)) {
+                    if(left_result.data.index() == right_result.data.index()) {
+                        if(std::holds_alternative<f64>(left_result.data)) {
+                            f64 a = std::get<f64>(left_result.data);
+                            f64 b = std::get<f64>(right_result.data);
+                            Token result;
+                            result.type = left_result.type;
+
+                            switch(bin_expr->type) {
+                                case BinaryType::Multiply: { result.data = a * b; break; }
+                                case BinaryType::Divide:   { result.data = a / b; break; }
+                                case BinaryType::Add:      { result.data = a + b; break; }
+                                case BinaryType::Subtract: { result.data = a - b; break; }
+                                default: { throw std::runtime_error("unhandled binary operation"); }
+                            }
+
+                            return result;
+                        } else if(std::holds_alternative<i64>(left_result.data)) {
+                            i64 a = std::get<i64>(left_result.data);
+                            i64 b = std::get<i64>(right_result.data);
+                            Token result;
+                            result.type = left_result.type;
+
+                            switch(bin_expr->type) {
+                                case BinaryType::Multiply: { result.data = a * b; break; }
+                                case BinaryType::Divide:   { result.data = a / b; break; }
+                                case BinaryType::Add:      { result.data = a + b; break; }
+                                case BinaryType::Subtract: { result.data = a - b; break; }
+                                default: { throw std::runtime_error("unhandled binary operation"); }
+                            }
+
+                            return result;
+                        } else if(std::holds_alternative<u64>(left_result.data)) {
+                            u64 a = std::get<u64>(left_result.data);
+                            u64 b = std::get<u64>(right_result.data);
+                            Token result;
+                            result.type = left_result.type;
+
+                            switch(bin_expr->type) {
+                                case BinaryType::Multiply: { result.data = a * b; break; }
+                                case BinaryType::Divide:   { result.data = a / b; break; }
+                                case BinaryType::Add:      { result.data = a + b; break; }
+                                case BinaryType::Subtract: { result.data = a - b; break; }
+                                default: { throw std::runtime_error("unhandled binary operation"); }
+                            }
+
+                            return result;
+                        }/* else if(std::holds_alternative<f64>(left_result)) {
+                            f64 a = std::get<f64>(left_result.data);
+                            f64 b = std::get<f64>(right_result.data);
+                            Token result;
+
+                            switch(bin_expr->type) {
+                                case BinaryType::Multiply: { result.data = a * b; break; }
+                                case BinaryType::Divide:   { result.data = a / b; break; }
+                                case BinaryType::Add:      { result.data = a + b; break; }
+                                case BinaryType::Subtract: { result.data = a - b; break; }
+                                default: { throw std::runtime_error("unhandled binary operation"); }
+                            }
+
+                            return result;
+                        }*/
+                    } else {
+                        throw std::runtime_error("not same type");
+                    }
+                } else {
+                    throw std::runtime_error("hmmm");
+                }
+            } else if(expr->get_type() == ExpressionType::ConstantValueExpression) {
+                auto* cons_expr = dynamic_cast<ConstantValueExpression*>(expr);
+                if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
+                    //INFO("{}", std::get<f64>(cons_expr->token.data));
+                    return Token {
+                        .type = TokenType::FLOATCONSTANT,
+                        .data = std::get<f64>(cons_expr->token.data)
+                    };
+                    /*Toka result = static_cast<f32>(std::get<f64>(cons_expr->token.data));
+                    return result;*/
+                } else if(cons_expr->token.type == TokenType::INTCONSTANT) {
+                    return Token {
+                        .type = TokenType::INTCONSTANT,
+                        .data = std::get<i64>(cons_expr->token.data)
+                    };
+                    //INFO("{}", std::get<i64>(cons_expr->token.data));
+                    /*Token
+                    binary_result result = static_cast<i32>(std::get<i64>(cons_expr->token.data));
+                    return result;*/
+                } else if(cons_expr->token.type == TokenType::UINTCONSTANT) {
+                    return Token {
+                        .type = TokenType::UINTCONSTANT,
+                        .data = std::get<u64>(cons_expr->token.data)
+                    };
+                    //INFO("{}", std::get<u64>(cons_expr->token.data));
+                    /*binary_result result = static_cast<u32>(std::get<u64>(cons_expr->token.data));
+                    return result;*/
+                } else if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                    return Token {
+                        .type = TokenType::DOUBLECONSTANT,
+                        .data = std::get<f64>(cons_expr->token.data)
+                    };
+                    //INFO("{}", std::get<f64>(cons_expr->token.data));
+                    /*binary_result result = std::get<f64>(cons_expr->token.data);
+                    return result;*/
+                }
+            }/* else if(expr->get_type() == ExpressionType::ConstructorExpression) {
+                auto* cons_expr = dynamic_cast<ConstructorExpression*>(expr);
+                for(auto& con : cons_expr->values) {
+                    visit_binary_expression(con.get());
+                }
+            }*/
+
+            return Token { .type = TokenType::EOS, .data = std::monostate{} };
+        };
+
+        auto convert_value_into_bits = [](Token token) -> std::pair<TokenType, u32> {
             TokenType type = token.type;
             u32 value = 0;
 
@@ -666,7 +794,7 @@ namespace HAFLSL {
         std::vector<SpvConstant> spv_constants = {};
 
         std::function<u32(const std::unique_ptr<Expression>& expr)> find_or_register_constant;
-        find_or_register_constant = [&find_or_register_constant, &spirv, &spv_constants, &spv_types, &find_or_register_type, &convert_value_into_bits](const std::unique_ptr<Expression>& expr) -> u32 {
+        find_or_register_constant = [&](const std::unique_ptr<Expression>& expr) -> u32 {
             for(auto& spv_constant : spv_constants) {
                 for(auto& uuid : spv_constant.uuids) {
                     if(expr->uuid == uuid) {
@@ -690,6 +818,12 @@ namespace HAFLSL {
                     auto* v = dynamic_cast<ConstantValueExpression*>(value.get());
                     values.push_back(convert_value_into_bits(v->token).second);
                 }
+            } else if(expr->get_type() == ExpressionType::BinaryExpression) {
+                auto* e = dynamic_cast<BinaryExpression*>(expr.get());
+                //type = e->token.type;
+                auto pair = convert_value_into_bits(visit_binary_expression(expr.get()));
+                type = pair.first;
+                values.push_back(pair.second);
             } else {
                 throw std::runtime_error("wrong type of expression");
             }
@@ -749,6 +883,14 @@ namespace HAFLSL {
                         throw std::runtime_error("unhandled type");
                     }
                 }
+            } else if(expr->get_type() == ExpressionType::BinaryExpression) {
+                u32 type_id = find_or_register_type({ .type = type }, false);
+
+                if(type != TokenType::BOOL) {
+                    spirv.OpConstant(type_id, id, values);
+                } else {
+                    throw std::runtime_error("wrong type of value");
+                }
             } else {
                 throw std::runtime_error("wrong type of expression");
             }
@@ -762,7 +904,6 @@ namespace HAFLSL {
 
             return id;
         };
-
         // CONSTANTS
         for(auto& statement : ast.statements) {
             if(statement->get_type() == StatementType::DeclareFunctionStatement) {
@@ -779,18 +920,64 @@ namespace HAFLSL {
                                 u32 constant_id = find_or_register_constant(assign_expr->right);
                             }
                         }
-                    }
-
-                    if(st->get_type() == StatementType::DeclareVariableStatement) {
+                    } else if(st->get_type() == StatementType::DeclareVariableStatement) {
                         auto* dc_stmt = dynamic_cast<DeclareVariableStatement*>(st.get());
 
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstantValueExpression) {
                             u32 constant_id = find_or_register_constant(dc_stmt->expression);
                         } else if(dc_stmt->expression->get_type() == ExpressionType::ConstructorExpression) {
                             u32 constant_id = find_or_register_constant(dc_stmt->expression);
+                        } else if(dc_stmt->expression->get_type() == ExpressionType::BinaryExpression) {
+                            u32 constant_id = find_or_register_constant(dc_stmt->expression);
+                            /*INFO("DWADWADWA");
+
+                            Token result = visit_binary_expression(dc_stmt->expression.get());
+                            INFO("{}", std::get<i64>(result.data));*/
+
+                            //auto* bin_expr = dynamic_cast<BinaryExpression*>(dc_stmt->expression.get());
+                            /*auto* left_expr = dynamic_cast<ConstantValueExpression*>(bin_expr->left.get());
+                            auto* right_expr = dynamic_cast<ConstantValueExpression*>(bin_expr->right.get());
+                            INFO("{}", std::get<i64>(left_expr->token.data));
+                            INFO("{}", std::get<i64>(right_expr->token.data));*/
+
+                            /*if(bin_expr->left->get_type() == ExpressionType::ConstantValueExpression) {
+                                auto* left_expr = dynamic_cast<ConstantValueExpression*>(bin_expr->left.get());
+                                INFO("{}", std::get<i64>(left_expr->token.data));
+                            } else if(bin_expr->left->get_type() == ExpressionType::BinaryExpression) {
+                                
+                                auto* _bin_expr = dynamic_cast<BinaryExpression*>(bin_expr->left.get());
+                                //INFO("{}", std::get<i64>(left_expr->token.data));
+
+                                if(_bin_expr->left->get_type() == ExpressionType::ConstantValueExpression) {
+                                    auto* left_expr = dynamic_cast<ConstantValueExpression*>(_bin_expr->left.get());
+                                    INFO("{}", std::get<i64>(left_expr->token.data));
+
+                                    auto* right_expr = dynamic_cast<ConstantValueExpression*>(_bin_expr->right.get());
+                                    INFO("{}", std::get<i64>(right_expr->token.data));
+                                }
+                                
+
+                            }
+
+                            if(bin_expr->right->get_type() == ExpressionType::ConstantValueExpression) {
+                                auto* right_expr = dynamic_cast<ConstantValueExpression*>(bin_expr->right.get());
+                                INFO("{}", std::get<i64>(right_expr->token.data));
+                            } else if(bin_expr->right->get_type() == ExpressionType::BinaryExpression) {
+                                auto* _bin_expr = dynamic_cast<BinaryExpression*>(bin_expr->right.get());
+                                //INFO("{}", std::get<i64>(left_expr->token.data));
+
+                                if(_bin_expr->right->get_type() == ExpressionType::ConstantValueExpression) {
+                                    auto* left_expr = dynamic_cast<ConstantValueExpression*>(_bin_expr->left.get());
+                                    INFO("{}", std::get<i64>(left_expr->token.data));
+
+                                    auto* right_expr = dynamic_cast<ConstantValueExpression*>(_bin_expr->right.get());
+                                    INFO("{}", std::get<i64>(right_expr->token.data));
+                                }
+                            }*/
                         }
                     } else if(st->get_type() == StatementType::ReturnStatement){
                         auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
+
                         if(rt_stmt->expr->get_type() == ExpressionType::ConstantValueExpression) {
                             u32 constant_id = find_or_register_constant(rt_stmt->expr);
                         } else if(rt_stmt->expr->get_type() == ExpressionType::ConstructorExpression) {
@@ -953,9 +1140,7 @@ namespace HAFLSL {
                                 u32 value_id = find_or_register_constant(dc_stmt->expression);
                                 spirv.OpStore(id, value_id);
                             }
-                        }
-
-                        if(dc_stmt->expression->get_type() == ExpressionType::CallFunctionExpression) {
+                        } else if(dc_stmt->expression->get_type() == ExpressionType::CallFunctionExpression) {
                             auto* cfn_expr = dynamic_cast<CallFunctionExpression*>(dc_stmt->expression.get());
                             auto* cons_expr = dynamic_cast<ConstantValueExpression*>(cfn_expr->function_expr.get());
 
@@ -967,6 +1152,9 @@ namespace HAFLSL {
                             spirv.OpFunctionCall(type_id, result_id, function_id);   
                             spirv.OpStore(id, result_id);
                         
+                        } else if(dc_stmt->expression->get_type() == ExpressionType::BinaryExpression) {
+                            u32 value_id = find_or_register_constant(dc_stmt->expression);
+                            spirv.OpStore(id, value_id);
                         }
                     } else if(st->get_type() == StatementType::ReturnStatement){
                         auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
@@ -1006,7 +1194,7 @@ namespace HAFLSL {
 
         core.Disassemble(spirv.data, &spirv_disassmble);
 
-        std::cout << spirv_disassmble << std::endl;
+        //std::cout << spirv_disassmble << std::endl;
 
         //throw std::runtime_error("bruh");
 

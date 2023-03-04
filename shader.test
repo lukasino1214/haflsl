@@ -2,21 +2,12 @@
 
 layout (location = 0) out vec4 fragColor;
 
-float test() {
-    return 2.0;
-}
-
 vec4 getColor() {
     return vec4(0.1, 0.8, 0.2, 1.0);
 }
 
 void main() {
-    /*int f = 5;
-    vec2 e = vec2(651651.0, 65161.0);
-    vec3 d = vec3(20.0, 56.0, 40.5);
-    bool c = false;*/
-    float b = test();
-    //vec4 a = vec4(0.1, 0.8, 0.2, 1.0);
+    float b = ((5 * 6) / 3 + 20 / 4) + 4;
     vec4 a = getColor();
     fragColor = a;
 }

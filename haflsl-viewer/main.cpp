@@ -304,6 +304,9 @@ struct App : AppWindow<App> {
                         break;
                     }
                     case HAFLSL::ExpressionType::BinaryExpression: {
+                        auto* e = dynamic_cast<HAFLSL::BinaryExpression*>(expr.get());
+                        print_expr(e->left);
+                        print_expr(e->right);
                         break;
                     }
                     case HAFLSL::ExpressionType::UnaryExpression: {

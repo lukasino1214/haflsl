@@ -807,24 +807,24 @@ namespace HAFLSL {
     auto Parser::get_token_precedence(const TokenType& token) -> i32 {
         switch(token) {
             case TokenType::LEFT_PAREN:     return 100;
-            case TokenType::STAR:           return 200;
-            case TokenType::SLASH:          return 200;
-            case TokenType::PERCENT:        return 200;
-            case TokenType::PLUS:           return 300;
-            case TokenType::DASH:           return 300;
-            case TokenType::LEFT_OP:        return 400;
-            case TokenType::RIGHT_OP:       return 400;
-            case TokenType::LEFT_ANGLE:     return 500;
-            case TokenType::RIGHT_ANGLE:    return 500;
-            case TokenType::LE_OP:          return 500;
-            case TokenType::GE_OP:          return 500;
-            case TokenType::EQ_OP:          return 600;
-            case TokenType::NE_OP:          return 600;
-            case TokenType::AMPERSAND:      return 700;
-            case TokenType::CARET:          return 800;
-            case TokenType::VERTICAL_BAR:   return 900;
-            case TokenType::AND_OP:         return 1000;
-            case TokenType::OR_OP:          return 1100;
+            case TokenType::STAR:           return 80;
+            case TokenType::SLASH:          return 80;
+            case TokenType::PERCENT:        return 80;
+            case TokenType::PLUS:           return 60;
+            case TokenType::DASH:           return 60;
+            case TokenType::LEFT_OP:        return 30;
+            case TokenType::RIGHT_OP:       return 30;
+            case TokenType::LEFT_ANGLE:     return 40;
+            case TokenType::RIGHT_ANGLE:    return 40;
+            case TokenType::LE_OP:          return 40;
+            case TokenType::GE_OP:          return 40;
+            case TokenType::EQ_OP:          return 50;
+            case TokenType::NE_OP:          return 50;
+            case TokenType::AMPERSAND:      return 30;
+            case TokenType::CARET:          return 30;
+            case TokenType::VERTICAL_BAR:   return 30;
+            case TokenType::AND_OP:         return 30;
+            case TokenType::OR_OP:          return 30;
             default: return -1;
         }
         return -1;
