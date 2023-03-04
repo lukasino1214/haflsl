@@ -33,6 +33,18 @@ namespace HAFLSL {
 
         std::vector<SpvName> spv_names = {};
 
+        auto find_or_register_name = [&spv_names, &spirv](const std::string_view& name) -> u32 {
+            for(auto& spv_name : spv_names) {
+                if(spv_name.name == name) {
+                    return spv_name.id;
+                }
+            }
+
+            throw std::runtime_error("name wasnt registered");
+
+            return 0;
+        };
+
         for(const auto& statement : ast.statements) {
             if(statement->get_type() == StatementType::DeclareFunctionStatement) {
                 DeclareFunctionStatement* stmt = dynamic_cast<DeclareFunctionStatement*>(statement.get());
@@ -581,16 +593,7 @@ namespace HAFLSL {
                 }
 
                 if(!found) {
-                    u32 id = 0;
-                    for(auto& name : spv_names) {
-                        if(name.name == stmt->name) {
-                            id = name.id;
-                        }
-                    }
-
-                    if(id == 0) {
-                        throw std::runtime_error("kys");
-                    }
+                    u32 id = find_or_register_name(stmt->name);
 
                     spv_variables.push_back({
                         .name = stmt->name,
@@ -732,12 +735,19 @@ namespace HAFLSL {
                 }
 
                 switch(type) {
-                    case TokenType::VEC4: {
-                        u32 type_id = find_or_register_type({ .type = TokenType::VEC4 }, false);
+                    case TokenType::BVEC2 ... TokenType::VEC4:{
+                        u32 type_id = find_or_register_type({ .type = type }, false);
                         spirv.OpConstantComposite(type_id, id, ids);
                         break;
+                    } 
+                    
+                    case TokenType::DVEC2 ... TokenType::DVEC4:{
+                        u32 type_id = find_or_register_type({ .type = type }, false);
+                        spirv.OpConstantComposite(type_id, id, ids);
+                        break;
+                    } default: {
+                        throw std::runtime_error("unhandled type");
                     }
-                    default: {}
                 }
             } else {
                 throw std::runtime_error("wrong type of expression");
@@ -776,14 +786,14 @@ namespace HAFLSL {
 
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstantValueExpression) {
                             u32 constant_id = find_or_register_constant(dc_stmt->expression);
-                        }
-
-                        if(dc_stmt->expression->get_type() == ExpressionType::ConstructorExpression) {
+                        } else if(dc_stmt->expression->get_type() == ExpressionType::ConstructorExpression) {
                             u32 constant_id = find_or_register_constant(dc_stmt->expression);
                         }
                     } else if(st->get_type() == StatementType::ReturnStatement){
                         auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
                         if(rt_stmt->expr->get_type() == ExpressionType::ConstantValueExpression) {
+                            u32 constant_id = find_or_register_constant(rt_stmt->expr);
+                        } else if(rt_stmt->expr->get_type() == ExpressionType::ConstructorExpression) {
                             u32 constant_id = find_or_register_constant(rt_stmt->expr);
                         }
                     }
@@ -799,14 +809,7 @@ namespace HAFLSL {
 
                 u32 return_type_id = find_or_register_type(Token { .type = fn_stmt->returned_type.type}, false);
                 u32 function_type_id = find_or_register_type(Token { .type = fn_stmt->returned_type.type}, true);
-
-                u32 name_id = 0;
-                for(auto& name : spv_names) {
-                    if(name.name == fn_stmt->name) {
-                        name_id = name.id;
-                        break;
-                    }
-                }
+                u32 name_id = find_or_register_name(fn_stmt->name);
 
                 spirv.OpFunction(return_type_id, name_id, EFunctionControl::None, function_type_id);
                 spirv.OpLabel(spirv.register_new_id());
@@ -850,16 +853,7 @@ namespace HAFLSL {
                     }  else if(st->get_type() == StatementType::DeclareVariableStatement) {
                         auto* dc_stmt = dynamic_cast<DeclareVariableStatement*>(st.get());
 
-                        u32 id = 0;
-                        for(auto& name : spv_names) {
-                            if(name.name == dc_stmt->name) {
-                                id = name.id;
-                            }
-                        }
-
-                        if(id == 0) {
-                            throw std::runtime_error("kys");
-                        }
+                        u32 id = find_or_register_name(dc_stmt->name);
 
                         spv_variables.push_back({
                             .name = dc_stmt->name,
@@ -890,13 +884,7 @@ namespace HAFLSL {
                             auto* assign_expr = dynamic_cast<AssignExpression*>(expr_stmt->expression.get()); 
                             auto* left_expr = dynamic_cast<ConstantValueExpression*>(assign_expr->left.get()); 
 
-                            u32 id = 0;
-                            for(auto& name : spv_names) {
-                                if(name.name == std::get<std::string_view>(left_expr->token.data)) {
-                                    id = name.id;
-                                    break;
-                                }
-                            }
+                            u32 id = find_or_register_name(std::get<std::string_view>(left_expr->token.data));
 
                             if(assign_expr->right->get_type() == ExpressionType::ConstructorExpression) {
                                 u32 object_id = find_or_register_constant(assign_expr->right);
@@ -919,24 +907,13 @@ namespace HAFLSL {
                                         }
                                     }
 
-                                    u32 loaded_type_id = 0;
-                                    for(auto& type : spv_types) {
-                                        if(type.type == loaded_type && type.function == false) {
-                                            loaded_type_id = type.id;
-                                            break;
-                                        }
-                                    }
+                                    u32 loaded_type_id = find_or_register_type({ .type = loaded_type }, false);
 
                                     u32 temp_id = spirv.register_new_id();
                                     spirv.OpLoad(loaded_type_id, temp_id, loaded_id);
                                     spirv.OpStore(id, temp_id);
-                                } else if(cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                                } else {
                                     u32 value_id = find_or_register_constant(assign_expr->right);
-
-                                    spirv.OpStore(id, value_id);
-                                } else if(cons_expr->token.type == TokenType::FLOATCONSTANT) {
-                                    u32 value_id = find_or_register_constant(assign_expr->right);
-
                                     spirv.OpStore(id, value_id);
                                 }
                             }
@@ -944,13 +921,7 @@ namespace HAFLSL {
                     }  else if(st->get_type() == StatementType::DeclareVariableStatement) {
                         auto* dc_stmt = dynamic_cast<DeclareVariableStatement*>(st.get());
 
-                        u32 id = 0;
-                        for(auto& name : spv_names) {
-                            if(name.name == dc_stmt->name) {
-                                id = name.id;
-                                break;
-                            }
-                        }
+                        u32 id = find_or_register_name(dc_stmt->name);
 
                         if(dc_stmt->expression->get_type() == ExpressionType::ConstructorExpression) {
                             u32 value_id = find_or_register_constant(dc_stmt->expression);
@@ -973,24 +944,13 @@ namespace HAFLSL {
                                     }
                                 }
 
-                                u32 loaded_type_id = 0;
-                                for(auto& type : spv_types) {
-                                    if(type.type == dc_stmt->type.type && type.function == false) {
-                                        loaded_type_id = type.id;
-                                        break;
-                                    }
-                                }
+                                u32 loaded_type_id = find_or_register_type({ .type = loaded_type }, false);
 
                                 u32 temp_id = spirv.register_new_id();
                                 spirv.OpLoad(loaded_type_id, temp_id, loaded_id);
                                 spirv.OpStore(id, temp_id);
-                            } else if(cons_expr->token.type == TokenType::FLOATCONSTANT || cons_expr->token.type == TokenType::DOUBLECONSTANT) {
+                            } else {
                                 u32 value_id = find_or_register_constant(dc_stmt->expression);
-
-                                if(value_id == 0) {
-                                    throw std::runtime_error("dwadwa");
-                                }
-
                                 spirv.OpStore(id, value_id);
                             }
                         }
@@ -998,13 +958,8 @@ namespace HAFLSL {
                         if(dc_stmt->expression->get_type() == ExpressionType::CallFunctionExpression) {
                             auto* cfn_expr = dynamic_cast<CallFunctionExpression*>(dc_stmt->expression.get());
                             auto* cons_expr = dynamic_cast<ConstantValueExpression*>(cfn_expr->function_expr.get());
-                            u32 function_id = 0;
-                            for(auto& name : spv_names) {
-                                if(name.name == std::get<std::string_view>(cons_expr->token.data)) {
-                                    function_id = name.id;
-                                    break;
-                                }
-                            }
+
+                            u32 function_id = find_or_register_name(std::get<std::string_view>(cons_expr->token.data));
 
                             u32 type_id = find_or_register_type(Token { .type = dc_stmt->type.type}, false);
                             
@@ -1016,6 +971,10 @@ namespace HAFLSL {
                     } else if(st->get_type() == StatementType::ReturnStatement){
                         auto* rt_stmt = dynamic_cast<ReturnStatement*>(st.get());
                         if(rt_stmt->expr->get_type() == ExpressionType::ConstantValueExpression) {
+                            u32 value_id = find_or_register_constant(rt_stmt->expr);
+
+                            spirv.OpReturnValue(value_id);
+                        } else if(rt_stmt->expr->get_type() == ExpressionType::ConstructorExpression) {
                             u32 value_id = find_or_register_constant(rt_stmt->expr);
 
                             spirv.OpReturnValue(value_id);
@@ -1047,7 +1006,7 @@ namespace HAFLSL {
 
         core.Disassemble(spirv.data, &spirv_disassmble);
 
-        //std::cout << spirv_disassmble << std::endl;
+        std::cout << spirv_disassmble << std::endl;
 
         //throw std::runtime_error("bruh");
 
