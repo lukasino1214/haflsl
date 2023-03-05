@@ -622,8 +622,32 @@ namespace HAFLSL {
             std::variant<std::monostate, std::vector<i64>, std::vector<f64>> data = std::monostate{};
         };
 
+        /*auto math_op = []<typename T1, typename T2>(BinaryResult& left_result, BinaryResult& right_result, BinaryType op) -> BinaryResult {
+            if constexpr (std::is_same<T1, T2>::value) {
+                std::vector<T1> values = {};
+                std::vector<T1>& left_values = std::get<std::vector<T1>>(left_result.data);
+                std::vector<T1>& right_values = std::get<std::vector<T1>>(right_result.data);
+
+                for(u32 i = 0; i < left_values.size(); i++) {
+                    switch(op) {
+                        case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[i]); break; }
+                        case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[i]); break; }
+                        case BinaryType::Add:      { values.push_back(left_values[i] + right_values[i]); break; }
+                        case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[i]); break; }
+                        default: { throw std::runtime_error("unhandled binary operation"); }
+                    }
+                }
+
+                BinaryResult result;
+                result.type = left_result.type;
+                result.data = values;
+            }
+
+            return {};
+        };*/
+
         std::function<BinaryResult(Expression* expr)> look_binary_expression;
-        look_binary_expression = [&look_binary_expression](Expression* expr) -> BinaryResult {
+        look_binary_expression = [&look_binary_expression/*, &math_op*/](Expression* expr) -> BinaryResult {
             if(expr->get_type() == ExpressionType::BinaryExpression) {
                 auto* bin_expr = dynamic_cast<BinaryExpression*>(expr);
 
@@ -633,162 +657,309 @@ namespace HAFLSL {
 
                 if(left_result.type == right_result.type) {
                     result.type = left_result.type;
-                } else { throw std::runtime_error("the types are not same"); }
 
-                switch(result.type) {
-                    case TokenType::FLOATCONSTANT: {
-                        std::vector<f64> values = {};
-                        std::vector<f64>& right_values = std::get<std::vector<f64>>(left_result.data);
-                        std::vector<f64>& left_values = std::get<std::vector<f64>>(right_result.data);
+                    switch(result.type) {
+                        case TokenType::FLOATCONSTANT: {
+                            std::vector<f64> values = {};
+                            std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                            std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
 
-                        for(u32 i = 0; i < right_values.size(); i++) {
-                            switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(right_values[i] * left_values[i]); break; }
-                                case BinaryType::Divide:   { values.push_back(right_values[i] / left_values[i]); break; }
-                                case BinaryType::Add:      { values.push_back(right_values[i] + left_values[i]); break; }
-                                case BinaryType::Subtract: { values.push_back(right_values[i] - left_values[i]); break; }
-                                default: { throw std::runtime_error("unhandled binary operation"); }
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[i]); break; }
+                                    case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[i]); break; }
+                                    case BinaryType::Add:      { values.push_back(left_values[i] + right_values[i]); break; }
+                                    case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[i]); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
                             }
+
+                            result.data = values;
+                            //result = math_op.template operator()<f64, f64>(left_result, right_result, bin_expr->type);
+                            break;
                         }
 
-                        result.data = values;
-                        break;
-                    }
+                        case TokenType::INTCONSTANT: {
+                            std::vector<i64> values = {};
+                            std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                            std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
 
-                    case TokenType::INTCONSTANT: {
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[i]); break; }
+                                    case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[i]); break; }
+                                    case BinaryType::Add:      { values.push_back(left_values[i] + right_values[i]); break; }
+                                    case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[i]); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
+                            }
+                            
+                            result.data = values;
+                            break;
+                        }
+
+                        case TokenType::UINTCONSTANT: {
+                            std::vector<i64> values = {};
+                            std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                            std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
+
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) * static_cast<u64>(right_values[i]))); break; }
+                                    case BinaryType::Divide:   { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) / static_cast<u64>(right_values[i]))); break; }
+                                    case BinaryType::Add:      { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) + static_cast<u64>(right_values[i]))); break; }
+                                    case BinaryType::Subtract: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) - static_cast<u64>(right_values[i]))); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
+                            }
+
+                            result.data = values;
+                            break;
+                        }
+
+                        case TokenType::DOUBLECONSTANT: {
+                            std::vector<f64> values = {};
+                            std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                            std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
+
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[i]); break; }
+                                    case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[i]); break; }
+                                    case BinaryType::Add:      { values.push_back(left_values[i] + right_values[i]); break; }
+                                    case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[i]); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
+                            }
+
+                            result.data = values;
+                            break;
+                        }
+
+                        case TokenType::IVEC2 ... TokenType::IVEC4: { 
+                            std::vector<i64> values = {};
+                            std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                            std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
+
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[i]); break; }
+                                    case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[i]); break; }
+                                    case BinaryType::Add:      { values.push_back(left_values[i] + right_values[i]); break; }
+                                    case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[i]); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
+                            }
+                            
+                            result.data = values;
+                            break;
+                        }
+
+                        case TokenType::UVEC2 ... TokenType::UVEC4: { 
+                            std::vector<i64> values = {};
+                            std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                            std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
+
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) * static_cast<u64>(right_values[i]))); break; }
+                                    case BinaryType::Divide:   { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) / static_cast<u64>(right_values[i]))); break; }
+                                    case BinaryType::Add:      { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) + static_cast<u64>(right_values[i]))); break; }
+                                    case BinaryType::Subtract: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) - static_cast<u64>(right_values[i]))); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
+                            }
+
+                            result.data = values;
+                            break;
+                        }
+
+                        case TokenType::VEC2 ... TokenType::VEC4: {
+                            std::vector<f64> values = {};
+                            std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                            std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
+
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[i]); break; }
+                                    case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[i]); break; }
+                                    case BinaryType::Add:      { values.push_back(left_values[i] + right_values[i]); break; }
+                                    case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[i]); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
+                            }
+
+                            result.data = values;
+                            break;
+                        }
+
+                        case TokenType::DVEC2 ... TokenType::DVEC4: { 
+                            std::vector<f64> values = {};
+                            std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                            std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
+
+                            for(u32 i = 0; i < left_values.size(); i++) {
+                                switch(bin_expr->type) {
+                                    case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[i]); break; }
+                                    case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[i]); break; }
+                                    case BinaryType::Add:      { values.push_back(left_values[i] + right_values[i]); break; }
+                                    case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[i]); break; }
+                                    default: { throw std::runtime_error("unhandled binary operation"); }
+                                }
+                            }
+
+                            result.data = values;
+                            break;
+                        }
+
+                        default: { throw std::runtime_error("hmmmmm"); }
+                    }
+                } else { 
+                    if((left_result.type == TokenType::IVEC2 || left_result.type == TokenType::IVEC3 || left_result.type == TokenType::IVEC4) && right_result.type == TokenType::INTCONSTANT) {
                         std::vector<i64> values = {};
-                        std::vector<i64>& right_values = std::get<std::vector<i64>>(left_result.data);
-                        std::vector<i64>& left_values = std::get<std::vector<i64>>(right_result.data);
-
-                        for(u32 i = 0; i < right_values.size(); i++) {
+                        std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                        std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
+                    
+                        for(u32 i = 0; i < left_values.size(); i++) {
                             switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(right_values[i] * left_values[i]); break; }
-                                case BinaryType::Divide:   { values.push_back(right_values[i] / left_values[i]); break; }
-                                case BinaryType::Add:      { values.push_back(right_values[i] + left_values[i]); break; }
-                                case BinaryType::Subtract: { values.push_back(right_values[i] - left_values[i]); break; }
+                                case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[0]); break; }
+                                case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[0]); break; }
+                                case BinaryType::Add:      { values.push_back(left_values[i] + right_values[0]); break; }
+                                case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[0]); break; }
                                 default: { throw std::runtime_error("unhandled binary operation"); }
                             }
                         }
-                        
-                        result.data = values;
-                        break;
-                    }
 
-                    case TokenType::UINTCONSTANT: {
+                        result.data = values;
+                        result.type = left_result.type;
+                    } else if((left_result.type == TokenType::UVEC2 || left_result.type == TokenType::UVEC3 || left_result.type == TokenType::UVEC4) && right_result.type == TokenType::UINTCONSTANT) {
                         std::vector<i64> values = {};
-                        std::vector<i64>& right_values = std::get<std::vector<i64>>(left_result.data);
-                        std::vector<i64>& left_values = std::get<std::vector<i64>>(right_result.data);
+                        std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                        std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
 
-                        for(u32 i = 0; i < right_values.size(); i++) {
+                        for(u32 i = 0; i < left_values.size(); i++) {
                             switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) * static_cast<u64>(left_values[i]))); break; }
-                                case BinaryType::Divide:   { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) / static_cast<u64>(left_values[i]))); break; }
-                                case BinaryType::Add:      { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) + static_cast<u64>(left_values[i]))); break; }
-                                case BinaryType::Subtract: { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) - static_cast<u64>(left_values[i]))); break; }
+                                case BinaryType::Multiply: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) * static_cast<u64>(right_values[0]))); break; }
+                                case BinaryType::Divide:   { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) / static_cast<u64>(right_values[0]))); break; }
+                                case BinaryType::Add:      { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) + static_cast<u64>(right_values[0]))); break; }
+                                case BinaryType::Subtract: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[i]) - static_cast<u64>(right_values[0]))); break; }
                                 default: { throw std::runtime_error("unhandled binary operation"); }
                             }
                         }
 
                         result.data = values;
-                        break;
-                    }
-
-                    case TokenType::DOUBLECONSTANT: {
+                        result.type = left_result.type;
+                    } else if((left_result.type == TokenType::VEC2 || left_result.type == TokenType::VEC3 || left_result.type == TokenType::VEC4) && (right_result.type == TokenType::FLOATCONSTANT || right_result.type == TokenType::DOUBLECONSTANT)) {
                         std::vector<f64> values = {};
-                        std::vector<f64>& right_values = std::get<std::vector<f64>>(left_result.data);
-                        std::vector<f64>& left_values = std::get<std::vector<f64>>(right_result.data);
-
-                        for(u32 i = 0; i < right_values.size(); i++) {
+                        std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                        std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
+                    
+                        for(u32 i = 0; i < left_values.size(); i++) {
                             switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(right_values[i] * left_values[i]); break; }
-                                case BinaryType::Divide:   { values.push_back(right_values[i] / left_values[i]); break; }
-                                case BinaryType::Add:      { values.push_back(right_values[i] + left_values[i]); break; }
-                                case BinaryType::Subtract: { values.push_back(right_values[i] - left_values[i]); break; }
+                                case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[0]); break; }
+                                case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[0]); break; }
+                                case BinaryType::Add:      { values.push_back(left_values[i] + right_values[0]); break; }
+                                case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[0]); break; }
                                 default: { throw std::runtime_error("unhandled binary operation"); }
                             }
                         }
 
                         result.data = values;
-                        break;
-                    }
+                        result.type = left_result.type;
+                    } else if((left_result.type == TokenType::DVEC2 || left_result.type == TokenType::DVEC3 || left_result.type == TokenType::DVEC4) && (right_result.type == TokenType::FLOATCONSTANT || right_result.type == TokenType::DOUBLECONSTANT)) {
+                        std::vector<f64> values = {};
+                        std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                        std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
 
-                    case TokenType::IVEC2 ... TokenType::IVEC4: { 
+                        for(u32 i = 0; i < left_values.size(); i++) {
+                            switch(bin_expr->type) {
+                                case BinaryType::Multiply: { values.push_back(left_values[i] * right_values[0]); break; }
+                                case BinaryType::Divide:   { values.push_back(left_values[i] / right_values[0]); break; }
+                                case BinaryType::Add:      { values.push_back(left_values[i] + right_values[0]); break; }
+                                case BinaryType::Subtract: { values.push_back(left_values[i] - right_values[0]); break; }
+                                default: { throw std::runtime_error("unhandled binary operation"); }
+                            }
+                        }
+
+                        result.data = values;
+                        result.type = left_result.type;
+                    } 
+                    
+                    
+                    else if((right_result.type == TokenType::IVEC2 || right_result.type == TokenType::IVEC3 || right_result.type == TokenType::IVEC4) && left_result.type == TokenType::INTCONSTANT) {
                         std::vector<i64> values = {};
-                        std::vector<i64>& right_values = std::get<std::vector<i64>>(left_result.data);
-                        std::vector<i64>& left_values = std::get<std::vector<i64>>(right_result.data);
-
+                        std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                        std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
+                    
                         for(u32 i = 0; i < right_values.size(); i++) {
                             switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(right_values[i] * left_values[i]); break; }
-                                case BinaryType::Divide:   { values.push_back(right_values[i] / left_values[i]); break; }
-                                case BinaryType::Add:      { values.push_back(right_values[i] + left_values[i]); break; }
-                                case BinaryType::Subtract: { values.push_back(right_values[i] - left_values[i]); break; }
+                                case BinaryType::Multiply: { values.push_back(left_values[0] * right_values[i]); break; }
+                                case BinaryType::Divide:   { values.push_back(left_values[0] / right_values[i]); break; }
+                                case BinaryType::Add:      { values.push_back(left_values[0] + right_values[i]); break; }
+                                case BinaryType::Subtract: { values.push_back(left_values[0] - right_values[i]); break; }
                                 default: { throw std::runtime_error("unhandled binary operation"); }
                             }
                         }
-                        
-                        result.data = values;
-                        break;
-                    }
 
-                    case TokenType::UVEC2 ... TokenType::UVEC4: { 
+                        result.data = values;
+                        result.type = right_result.type;
+                    } else if((right_result.type == TokenType::UVEC2 || right_result.type == TokenType::UVEC3 || right_result.type == TokenType::UVEC4) && left_result.type == TokenType::UINTCONSTANT) {
                         std::vector<i64> values = {};
-                        std::vector<i64>& right_values = std::get<std::vector<i64>>(left_result.data);
-                        std::vector<i64>& left_values = std::get<std::vector<i64>>(right_result.data);
+                        std::vector<i64>& left_values = std::get<std::vector<i64>>(left_result.data);
+                        std::vector<i64>& right_values = std::get<std::vector<i64>>(right_result.data);
 
                         for(u32 i = 0; i < right_values.size(); i++) {
                             switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) * static_cast<u64>(left_values[i]))); break; }
-                                case BinaryType::Divide:   { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) / static_cast<u64>(left_values[i]))); break; }
-                                case BinaryType::Add:      { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) + static_cast<u64>(left_values[i]))); break; }
-                                case BinaryType::Subtract: { values.push_back(static_cast<i64>(static_cast<u64>(right_values[i]) - static_cast<u64>(left_values[i]))); break; }
+                                case BinaryType::Multiply: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[0]) * static_cast<u64>(right_values[i]))); break; }
+                                case BinaryType::Divide:   { values.push_back(static_cast<i64>(static_cast<u64>(left_values[0]) / static_cast<u64>(right_values[i]))); break; }
+                                case BinaryType::Add:      { values.push_back(static_cast<i64>(static_cast<u64>(left_values[0]) + static_cast<u64>(right_values[i]))); break; }
+                                case BinaryType::Subtract: { values.push_back(static_cast<i64>(static_cast<u64>(left_values[0]) - static_cast<u64>(right_values[i]))); break; }
                                 default: { throw std::runtime_error("unhandled binary operation"); }
                             }
                         }
 
                         result.data = values;
-                        break;
-                    }
-
-                    case TokenType::VEC2 ... TokenType::VEC4: {
+                        result.type = right_result.type;
+                    } else if((right_result.type == TokenType::VEC2 || right_result.type == TokenType::VEC3 || right_result.type == TokenType::VEC4) && (left_result.type == TokenType::FLOATCONSTANT || left_result.type == TokenType::DOUBLECONSTANT)) {
                         std::vector<f64> values = {};
-                        std::vector<f64>& right_values = std::get<std::vector<f64>>(left_result.data);
-                        std::vector<f64>& left_values = std::get<std::vector<f64>>(right_result.data);
-
+                        std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                        std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
+                    
                         for(u32 i = 0; i < right_values.size(); i++) {
                             switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(right_values[i] * left_values[i]); break; }
-                                case BinaryType::Divide:   { values.push_back(right_values[i] / left_values[i]); break; }
-                                case BinaryType::Add:      { values.push_back(right_values[i] + left_values[i]); break; }
-                                case BinaryType::Subtract: { values.push_back(right_values[i] - left_values[i]); break; }
+                                case BinaryType::Multiply: { values.push_back(left_values[0] * right_values[i]); break; }
+                                case BinaryType::Divide:   { values.push_back(left_values[0] / right_values[i]); break; }
+                                case BinaryType::Add:      { values.push_back(left_values[0] + right_values[i]); break; }
+                                case BinaryType::Subtract: { values.push_back(left_values[0] - right_values[i]); break; }
                                 default: { throw std::runtime_error("unhandled binary operation"); }
                             }
                         }
 
                         result.data = values;
-                        break;
-                    }
-
-                    case TokenType::DVEC2 ... TokenType::DVEC4: { 
+                        result.type = right_result.type;
+                    } else if((right_result.type == TokenType::DVEC2 || right_result.type == TokenType::DVEC3 || right_result.type == TokenType::DVEC4) && (left_result.type == TokenType::FLOATCONSTANT || left_result.type == TokenType::DOUBLECONSTANT)) {
                         std::vector<f64> values = {};
-                        std::vector<f64>& right_values = std::get<std::vector<f64>>(left_result.data);
-                        std::vector<f64>& left_values = std::get<std::vector<f64>>(right_result.data);
+                        std::vector<f64>& left_values = std::get<std::vector<f64>>(left_result.data);
+                        std::vector<f64>& right_values = std::get<std::vector<f64>>(right_result.data);
 
                         for(u32 i = 0; i < right_values.size(); i++) {
                             switch(bin_expr->type) {
-                                case BinaryType::Multiply: { values.push_back(right_values[i] * left_values[i]); break; }
-                                case BinaryType::Divide:   { values.push_back(right_values[i] / left_values[i]); break; }
-                                case BinaryType::Add:      { values.push_back(right_values[i] + left_values[i]); break; }
-                                case BinaryType::Subtract: { values.push_back(right_values[i] - left_values[i]); break; }
+                                case BinaryType::Multiply: { values.push_back(left_values[0] * right_values[i]); break; }
+                                case BinaryType::Divide:   { values.push_back(left_values[0] / right_values[i]); break; }
+                                case BinaryType::Add:      { values.push_back(left_values[0] + right_values[i]); break; }
+                                case BinaryType::Subtract: { values.push_back(left_values[0] - right_values[i]); break; }
                                 default: { throw std::runtime_error("unhandled binary operation"); }
                             }
                         }
 
                         result.data = values;
-                        break;
+                        result.type = right_result.type;
+                    } else {
+                        INFO("left {}", static_cast<u32>(left_result.type));
+                        INFO("right {}", static_cast<u32>(right_result.type));
+                        throw std::runtime_error("unhandled math op"); 
                     }
 
-                    default: { throw std::runtime_error("hmmmmm"); }
                 }
 
                 return result;
@@ -869,7 +1040,7 @@ namespace HAFLSL {
             };
         };
 
-        using binary_result = std::variant<std::monostate, f32, i32, u32, f64>;
+        /*using binary_result = std::variant<std::monostate, f32, i32, u32, f64>;
         std::function<Token(Expression* expr)> visit_binary_expression;
         visit_binary_expression = [&visit_binary_expression](Expression* expr) -> Token {
             if(expr->get_type() == ExpressionType::BinaryExpression) {
@@ -955,15 +1126,15 @@ namespace HAFLSL {
                         .data = std::get<f64>(cons_expr->token.data)
                     };
                 }
-            }/* else if(expr->get_type() == ExpressionType::ConstructorExpression) {
+            } else if(expr->get_type() == ExpressionType::ConstructorExpression) {
                 auto* cons_expr = dynamic_cast<ConstructorExpression*>(expr);
                 for(auto& con : cons_expr->values) {
                     visit_binary_expression(con.get());
                 }
-            }*/
+            }
 
             return Token { .type = TokenType::EOS, .data = std::monostate{} };
-        };
+        };*/
 
         auto convert_value_into_bits = [](Token token) -> std::pair<TokenType, u32> {
             TokenType type = token.type;
@@ -1112,7 +1283,7 @@ namespace HAFLSL {
                     case TokenType::VEC2 ... TokenType::VEC4:   { 
                         std::vector<f64>& data = std::get<std::vector<f64>>(result.data);
                         for(auto& value : data) {
-                            INFO("tfftu {}", value);
+                            //INFO("tfftu {}", value);
                             auto pair = convert_value_into_bits({ .type = TokenType::FLOATCONSTANT, .data = value });
                             values.push_back(pair.second);
                         }
@@ -1198,50 +1369,31 @@ namespace HAFLSL {
                     }
                 }
             } else if(expr->get_type() == ExpressionType::BinaryExpression) {
-                INFO("{}", static_cast<u32>(type));
+                //INFO("{}", static_cast<u32>(type));
                 u32 type_id = find_or_register_type({ .type = type }, false);
 
                 if(TokenType::FLOAT >= type && type <= TokenType::DOUBLE) {
-                    INFO("THIS");
+                    //INFO("THIS");
                     id = spirv.register_new_id();
                     spirv.OpConstant(type_id, id, values);
                 } else if((TokenType::BVEC2 >= type && type <= TokenType::VEC4) || (TokenType::DVEC2 >= type && type <= TokenType::DVEC4)) {
-                    INFO("THIS?");
+                    //INFO("THIS?");
                     u32 type_id = find_or_register_type({ .type = type }, false);
                     std::vector<u32> ids = {};
-                    /*for(auto& spv_constant : spv_constants) {
-                        if(spv_constant.type == type) {
-                            for(u32 i = 0; i < spv_constant.values.size(); i++) {
-                                if(values[i] != spv_constant.values[i]) {
-                                    break;
-                                }
-
-                                if(i == spv_constant.values.size() - 1) {
-                                    spv_constant.uuids.push_back(expr->uuid);
-                                    ids.push_back(spv_constant.id);
-                                }
-                            }
-                        }
-                    }*/
                     for(auto& value : values) {
                         bool found = false;
                         for(auto& spv_constant : spv_constants) {
                             if(spv_constant.type == type) {
-                                for(u32 i = 0; i < spv_constant.values.size(); i++) {
-                                    if(values[i] != spv_constant.values[i]) {
-                                        break;
-                                    }
-
-                                    if(i == spv_constant.values.size() - 1) {
-                                        //spv_constant.uuids.push_back(expr->uuid);
-                                        ids.push_back(spv_constant.id);
-                                        found = true;
-                                    }
+                                if(value == spv_constant.values[0]) {
+                                    ids.push_back(spv_constant.id);
+                                    found = true;
+                                    break;
                                 }
                             }
                         }
 
                         if(!found) {
+                            //INFO("here");
                             u32 constant_id = spirv.register_new_id();
 
                             TokenType constant_type = TokenType::EOS;
@@ -1254,7 +1406,7 @@ namespace HAFLSL {
                                 default: { throw std::runtime_error("bzozo"); }
                             }
 
-                            INFO("bruh {}", static_cast<u32>(constant_type));
+                            //INFO("bruh {}", static_cast<u32>(constant_type));
 
                             u32 constant_type_id = find_or_register_type(Token { .type = constant_type }, false);
                             spirv.OpConstant(constant_type_id, constant_id, { value });
@@ -1270,8 +1422,15 @@ namespace HAFLSL {
                         }
                     }
 
-                    INFO("VALUES: {}", values.size());
-                    INFO("IDS: {}", values.size());
+                    /*INFO("VALUES: {}", values.size());
+                    for(auto& v : values) {
+                        INFO("v {}", v);
+                    }
+
+                    INFO("IDS: {}", ids.size());
+                    for(auto& _id : ids) {
+                        INFO("id {}", _id);
+                    }*/
 
                     id = spirv.register_new_id();
                     spirv.OpConstantComposite(type_id, id, ids);
@@ -1576,13 +1735,13 @@ namespace HAFLSL {
 
         core.SetMessageConsumer(print_msg_to_stderr);
 
-        core.Validate(spirv.data);
 
         std::string spirv_disassmble = {};
 
         core.Disassemble(spirv.data, &spirv_disassmble);
 
         std::cout << spirv_disassmble << std::endl;
+        core.Validate(spirv.data);
 
         //throw std::runtime_error("bruh");
 
