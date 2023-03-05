@@ -7,7 +7,12 @@ vec4 getColor() {
 }
 
 void main() {
-    vec2 b = vec2(4.0, 3.0) + vec2(6.0, 7.0);
-    vec4 a = getColor();
-    fragColor = a;
+    float a = 33.0 * 2.0;
+    vec2  b = vec2(12.0, 16.0) / vec2(3.0, 8.0);
+    ivec3 c = ivec3(9, 30, 42) * 8;
+    ivec2 d = 2 - ivec2(4, 8);
+
+
+    vec4 z = getColor();
+    fragColor = z;
 }
