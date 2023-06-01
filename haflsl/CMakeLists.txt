@@ -3,12 +3,20 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #High As Fuck Lukas Shader Language
-project(HAFLSL)
-
+project("haflsl")
 add_library(${PROJECT_NAME})
-target_sources(${PROJECT_NAME} PRIVATE source/utils.cpp source/compiler.cpp source/logger.cpp source/preprocessing.cpp source/lexer.cpp source/parser.cpp source/transpiler.cpp source/code_buffer.cpp include/haflsl/uuid.hpp source/uuid.cpp )
-target_link_libraries(${PROJECT_NAME} LINK_PUBLIC spdlog::spdlog spdlog::spdlog_header_only FastFloat::fast_float)
-target_link_libraries(${PROJECT_NAME} PRIVATE SPIRV-Tools-static)
+target_sources(${PROJECT_NAME} PRIVATE 
+    "source/lexer.cpp" 
+    "source/parser.cpp" 
+    "source/vm.cpp" 
+    "source/chunk.cpp" 
+    "source/value.cpp" 
+    "source/token.cpp"
+    "source/nodes.cpp"
+    "source/bytecode_writer.cpp"
+    "source/compiler/bytecode_compiler.cpp"
+    "source/global.cpp"
+)
 
 target_include_directories(
     ${PROJECT_NAME}

@@ -1,0 +1,174 @@
+// print("----constants---");
+// print(5);
+// print(69.69);
+// print("bozo");
+// print(+5);
+// print(-5);
+// // 
+// print("---binary-op----");
+// print(true);
+// print(!true);
+// print("pog" + "gers");
+// print(-((6.6 + 3.4) / 5.0));
+// // 
+// print("------comparision---");
+// print(true == true);
+// print(true == false);
+// print(true != false);
+// print( 5 > 6 );
+// print( 5 < 6 );
+// print( 6 >= 6 );
+// print( 5.0 > 6.0 );
+// print( 5.0 < 6.0 );
+// print("bruh" == "bruh");
+// // 
+// print("---variable----");
+// bool var = true;
+// print(var);
+// // 
+// // string bruh = "pog";
+// // bruh = "more pog";
+// // string bruh_1 = bruh + "gers";
+// // print(bruh_1);
+// // 
+// int test = 5;
+// print(test);
+// test = 9;
+// test += 1;
+// test -= 2;
+// test /= 4;
+// test *= 2;
+// print(test);
+// // 
+// print("-- locals --");
+// 
+// {
+//     int kys = 5;
+//     print(kys);
+//     kys += 6;
+//     print(kys);
+// }
+// 
+// print("-- if statements --");
+// 
+// bool condition = true;
+// if (condition) {
+//     print("condition was truthy");
+// } 
+// 
+// condition = false;
+// 
+// if(condition == false) {
+//     print("condition was falsy");
+// } 
+// 
+// condition = true;
+// 
+// if(condition == false) {
+//     print("condition was falsy");
+// } else {
+//     print("condition was truthy");
+// }
+// 
+// if(true and true) {
+//     print("works");
+// }
+// 
+// if(true or false) {
+//     print("works");
+// }
+// 
+// print("-- while loop statement --");
+// 
+// int j = 0;
+// while(j != 5) {
+//     print(j);
+//     j += 1;
+// }
+// // 
+// print("-- for loop statement --");
+// 
+// for(int i = 0; i < 5; i += 1) {
+//     print(i);
+// }
+// 
+// print("-- functions --");
+// string b = "test";
+// fn bruh() {
+//     fn kys() {
+//         print(b);
+//     }
+// 
+//     return kys;
+// }
+// 
+// int c = bruh();
+// int a = c();
+// a();
+// 
+// print("-- oop --");
+// 
+// struct Pair {};
+// int pair = Pair();
+// pair.first = 1;
+// pair.second = 2;
+// print(pair.first + pair.second); 
+// 
+// struct Test {
+//     fn init() {
+//         print("made");
+//     }
+// 
+//     fn test() -> int {
+//         print(this.fr);
+//     }
+// };
+// 
+// int test_instance = Test();
+// test_instance.fr = 5;
+// test_instance.test();
+// 
+// 
+// fn kys_fn(int k) -> int {
+//     return 7 + k;
+// }
+// 
+// int v = kys_fn(5);
+// print(v);
+// 
+// fn fib(int n) -> int {
+//  if (n < 2) {
+//     return n;
+//  }
+//  return fib(n - 2) + fib(n - 1);
+// }
+// 
+// float start = clock();
+// print(fib(15));
+// print(clock() - start);
+// 
+// print("-- another variables");
+// string bruh = "pog";
+// bruh = "more pog";
+// string bruh_1 = bruh + "gers";
+// print(bruh_1);
+// 
+// cpp_fn("test");
+
+// cpp_fn("fun");
+
+print(cpp_add(5.6, 4.4));
+
+struct Test {
+    fn init() {
+        print("called init function when creating instance");
+    }
+
+    fn test() -> int {
+        print(this.member);
+    }
+};
+
+int test_instance = Test();
+test_instance.member = "bozo";
+test_instance.test();
