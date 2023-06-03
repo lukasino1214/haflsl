@@ -346,15 +346,17 @@ namespace haflsl {
         ExpressionPtr expression;
     };
 
-    /*struct LocationStatement : public Statement {
+    struct LocationStatement : public Statement {
         auto get_type() -> StatementType override { return StatementType::LocationStatement; }
         auto get_name() -> std::string_view override { return "LocationStatement"; }
+
+        void visit(StatementVisitor &visitor) override;
 
         u32 location;
         Token way;
         Token type;
-        std::string_view name;
-    };*/
+        std::string name;
+    };
 
     struct PrintStatement : public Statement {
         auto get_type() -> StatementType override { return StatementType::PrintStatement; }

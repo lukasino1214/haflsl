@@ -47,6 +47,14 @@ namespace haflsl {
         FLOAT,  // float
         STRING, // string
 
+        VEC2, // vec2
+        VEC3, // vec3
+        VEC4, // vec4
+
+        IVEC2, // ivec2
+        IVEC3, // ivec3
+        IVEC4, // ivec4
+
         IDENTIFIER, // name of variable, function, member
 
         BOOL_CONSTANT,   // true / false
@@ -64,6 +72,12 @@ namespace haflsl {
         AND,    // and
         OR,     // or
         STRUCT, // struct
+
+        LAYOUT, // layout
+        LOCATION, // location
+
+        IN, // in
+        OUT, // out
 
         PRINT, // print
         EOS,   // indicates end of the stream

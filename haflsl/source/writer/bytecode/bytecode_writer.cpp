@@ -1,6 +1,8 @@
-#include <haflsl/bytecode_writer.hpp>
+#include "haflsl/nodes.hpp"
+#include <haflsl/writer/bytecode/bytecode_writer.hpp>
 
 #include <iostream>
+#include <stdexcept>
 
 namespace haflsl {
     Compiler::Compiler(Function::Type type) {
@@ -471,6 +473,10 @@ namespace haflsl {
     void BytecodeWriter::visit(ExpressionStatement &node) {
         node.expression->visit(*this);
         current_chunk()->write(OP::POP, 123);
+    }
+
+    void BytecodeWriter::visit(LocationStatement &node) {
+        throw std::runtime_error("cant use location statement in scripting");
     }
 
     void BytecodeWriter::visit(PrintStatement &node) {

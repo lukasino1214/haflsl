@@ -47,14 +47,14 @@ namespace haflsl {
     }
 
     auto Parser::is_type(TokenType type) -> bool {
-        return static_cast<u32>(type) >= static_cast<u32>(TokenType::BOOL) && static_cast<u32>(type) <= static_cast<u32>(TokenType::STRING);
+        return static_cast<u32>(type) >= static_cast<u32>(TokenType::BOOL) && static_cast<u32>(type) <= static_cast<u32>(TokenType::IVEC4);
     }
 
     auto Parser::is_constant(TokenType type) -> bool {
         return static_cast<u32>(type) >= static_cast<u32>(TokenType::BOOL_CONSTANT) && static_cast<u32>(type) <= static_cast<u32>(TokenType::STRING_CONSTANT);
     }
 
-    void Parser::debug_print(const AST &ast) {
+    void Parser::debug_print(const std::vector<StatementPtr> &ast) {
         auto tabs = [](u32 count) -> std::string {
             std::string str;
             for (u32 i = 0; i < count; i++) {
@@ -175,6 +175,16 @@ namespace haflsl {
                         bruh += print_expr(ac_expr->expr, depth + 1);
                         return tabs(depth) + "AccessIdentifierExpression\n" + tabs(depth + 1) + bruh + "\n";
                     }
+                    case ExpressionType::ConstructorExpression: {
+                        ConstructorExpression *constructor_expr = dynamic_cast<ConstructorExpression *>(expr.get());
+
+                        std::string parameters = constructor_expr->values.size() == 0 ? " None" : "\n";
+                        for (auto &p : constructor_expr->values) {
+                            parameters += print_expr(p, depth + 2);
+                        }
+
+                        return tabs(depth) + "ConstructorExpression\n" + tabs(depth + 1) + "Type: " + constructor_expr->type.type_to_str() + "\n" + tabs(depth + 1) + "Paramaters:" + parameters;
+                    } break;
                     default: {
                         throw std::runtime_error("unhandled expr type in debug print: " + std::string{expr->get_name()});
                     }
@@ -265,6 +275,11 @@ namespace haflsl {
 
                     return tabs(depth) + "DeclareStruct\n" + tabs(depth + 1) + "Name: " + std::string{struct_stmt->name} + "\n" + tabs(depth + 1) + "Members: " + bruh + "\n";
                 }
+                case StatementType::LocationStatement: {
+                    auto *loc_stmt = dynamic_cast<LocationStatement *>(stmt.get());
+
+                    return tabs(depth) + "LocationStatement\n" + tabs(depth + 1) + "Location: " + std::to_string(loc_stmt->location) + "\n" + tabs(depth + 1) + "Way: " + loc_stmt->way.type_to_str() + "\n" + tabs(depth + 1) + "Type: " + loc_stmt->type.type_to_str() + "\n" + tabs(depth + 1) + "Name: " + loc_stmt->name + "\n";
+                }
                 default: {
                     throw std::runtime_error("unhandled stmt type in debug print: " + std::string{stmt->get_name()});
                 }
@@ -273,12 +288,12 @@ namespace haflsl {
             return "";
         };
 
-        for (auto &stmt : ast.statements) {
+        for (auto &stmt : ast) {
             std::cout << print_stmt(stmt, 0) << std::endl;
         }
     }
 
-    auto Parser::parse(const Global& global, std::vector<Token> tokens) -> Result<std::vector<StatementPtr>> {
+    auto Parser::parse(const Global &global, std::vector<Token> tokens) -> Result<std::vector<StatementPtr>> {
         Context context_{
             .token_count = tokens.size(),
             .token_index = 0,
@@ -430,6 +445,10 @@ namespace haflsl {
                 }
                 case TokenType::FUNCTION: {
                     statement = parse_function_declaration();
+                    break;
+                }
+                case TokenType::LAYOUT: {
+                    statement = parse_layout_statement();
                     break;
                 }
                 case TokenType::IDENTIFIER: {
@@ -636,7 +655,7 @@ namespace haflsl {
                 break;
             }
 
-            //token.print();
+            // token.print();
         }
         expect(advance(), TokenType::RIGHT_BRACE);
         expect(advance(), TokenType::SEMICOLON);
@@ -645,6 +664,29 @@ namespace haflsl {
         stmt->name = std::get<std::string>(name_token.value);
         stmt->methods = std::move(methods);
         // stmt->members = std::move(members);
+
+        return stmt;
+    }
+
+    auto Parser::parse_layout_statement() -> StatementPtr {
+        expect(advance(), TokenType::LAYOUT);
+        expect(advance(), TokenType::LEFT_PAREN);
+        expect(advance(), TokenType::LOCATION);
+        expect(advance(), TokenType::EQUAL);
+        Token location = peek();
+        expect(advance(), TokenType::INT_CONSTANT);
+        expect(advance(), TokenType::RIGHT_PAREN);
+        Token way = advance();
+        Token type = advance();
+        Token name = expect(advance(), TokenType::IDENTIFIER);
+        expect(advance(), TokenType::SEMICOLON);
+
+        auto stmt = std::make_unique<LocationStatement>();
+
+        stmt->location = static_cast<u32>(std::get<i64>(location.value));
+        stmt->way = way;
+        stmt->type = type;
+        stmt->name = std::get<std::string>(name.value);
 
         return stmt;
     }
@@ -754,6 +796,9 @@ namespace haflsl {
                 if (is_constant(token.type)) {
                     primary_expr = parse_constant_expression();
                     break;
+                } else if (is_type(token.type)) {
+                    primary_expr = parse_constructor_expression();
+                    break;
                 } else {
                     token.print();
                     throw std::runtime_error("unhandled primary expression");
@@ -790,6 +835,15 @@ namespace haflsl {
         expect(advance(), TokenType::RIGHT_PAREN);
 
         return parameters;
+    }
+
+    auto Parser::parse_constructor_expression() -> ExpressionPtr {
+        auto constructor_expr = std::make_unique<ConstructorExpression>();
+        // INFO("{}", Lexer::token_to_string_view(peek()));
+        constructor_expr->type = advance();
+        expect(advance(), TokenType::LEFT_PAREN);
+        constructor_expr->values = parse_expression_list();
+        return constructor_expr;
     }
 
     auto Parser::get_token_precedence(const TokenType &token) -> i32 {

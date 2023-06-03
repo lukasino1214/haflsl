@@ -44,6 +44,14 @@ static constexpr std::string_view token_names[] = {
     "FLOAT",
     "STRING",
 
+    "VEC2",
+    "VEC3",
+    "VEC4",
+
+    "IVEC2",
+    "IVEC3",
+    "IVEC4",
+
     "IDENTIFIER",
 
     "BOOL_CONSTANT",
@@ -62,6 +70,12 @@ static constexpr std::string_view token_names[] = {
     "OR",
 
     "STRUCT",
+
+    "LAYOUT",
+    "LOCATION",
+
+    "IN",
+    "OUT",
 
     "PRINT",
     "EOS"};

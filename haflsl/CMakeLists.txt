@@ -13,9 +13,16 @@ target_sources(${PROJECT_NAME} PRIVATE
     "source/value.cpp" 
     "source/token.cpp"
     "source/nodes.cpp"
-    "source/bytecode_writer.cpp"
+    "source/writer/bytecode/bytecode_writer.cpp"
     "source/compiler/bytecode_compiler.cpp"
     "source/global.cpp"
+    "source/compiler/spirv_compiler.cpp"
+    "source/writer/spirv/spirv_writer.cpp"
+    "source/writer/spirv/code_buffer.cpp"
+    "source/writer/spirv/name_register.cpp"
+    "source/writer/spirv/type_register.cpp"
+    "source/writer/spirv/variable_register.cpp"
+    "source/writer/spirv/constant_register.cpp"
 )
 
 target_include_directories(

@@ -8,10 +8,6 @@
 #include <haflsl/global.hpp>
 
 namespace haflsl {
-    struct AST {
-        std::vector<StatementPtr> statements = {};
-    };
-
     struct Parser {
         Parser() = default;
         ~Parser() = default;
@@ -33,7 +29,7 @@ namespace haflsl {
         auto is_type(TokenType type) -> bool;
         auto is_constant(TokenType type) -> bool;
 
-        void debug_print(const AST &ast);
+        void debug_print(const std::vector<StatementPtr> &ast);
         auto parse(const Global& global, std::vector<Token> tokens) -> Result<std::vector<StatementPtr>>;
 
         auto parse_root_statement() -> StatementPtr;
@@ -49,6 +45,7 @@ namespace haflsl {
         auto parse_while_statement() -> StatementPtr;
         auto parse_for_statement() -> StatementPtr;
         auto parse_struct_declaration() -> StatementPtr;
+        auto parse_layout_statement() -> StatementPtr;
 
         auto parse_expression() -> ExpressionPtr;
         auto parse_bin_op_rhs(i32 expr_precedence, ExpressionPtr lhs) -> ExpressionPtr;
@@ -56,6 +53,7 @@ namespace haflsl {
         auto parse_constant_expression() -> ExpressionPtr;
         auto parse_parenthesis_expression() -> ExpressionPtr;
         auto parse_expression_list() -> std::vector<ExpressionPtr>;
+        auto parse_constructor_expression() -> ExpressionPtr;
 
         auto get_token_precedence(const TokenType &token) -> i32;
 

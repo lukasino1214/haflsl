@@ -56,6 +56,7 @@ namespace haflsl {
         void visit(WhileStatement &node) override;
         void visit(ForStatement &node) override;
         void visit(ExpressionStatement &node) override;
+        void visit(LocationStatement& node) override;
         void visit(PrintStatement &node) override;
 
         void begin_scope();

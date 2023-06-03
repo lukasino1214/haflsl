@@ -8,6 +8,16 @@ namespace haflsl {
         keywords["int"] = TokenType::INT;
         keywords["float"] = TokenType::FLOAT;
         keywords["string"] = TokenType::STRING;
+
+
+        keywords["vec2"] = TokenType::VEC2;
+        keywords["vec3"] = TokenType::VEC3;
+        keywords["vec4"] = TokenType::VEC4;
+
+        keywords["ivec2"] = TokenType::IVEC2;
+        keywords["ivec3"] = TokenType::IVEC3;
+        keywords["ivec4"] = TokenType::IVEC4;
+
         keywords["fn"] = TokenType::FUNCTION;
         keywords["if"] = TokenType::IF;
         keywords["else"] = TokenType::ELSE;
@@ -17,6 +27,10 @@ namespace haflsl {
         keywords["and"] = TokenType::AND;
         keywords["or"] = TokenType::OR;
         keywords["struct"] = TokenType::STRUCT;
+        keywords["layout"] = TokenType::LAYOUT;
+        keywords["location"] = TokenType::LOCATION;
+        keywords["in"] = TokenType::IN;
+        keywords["out"] = TokenType::OUT;
 
         keywords["print"] = TokenType::PRINT;
     }

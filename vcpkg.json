@@ -1,0 +1,45 @@
+{
+  "name": "haflsl",
+  "version": "0.1.0",
+  "dependencies": [
+    {
+        "name": "daxa",
+        "features": [
+            "utils-imgui",
+            "utils-mem",
+            "utils-pipeline-manager-glslang",
+            "utils-task-list"
+        ]
+    },
+    {
+      "name": "glfw3",
+      "features": [
+        "xlib",
+        "wayland"
+      ]
+    },
+    {
+        "name": "imgui",
+        "features": [
+            "glfw-binding",
+            "docking-experimental"
+        ]
+    },
+    "spdlog",
+    "fast-float",
+    "shaderc",
+    "spirv-tools",
+    "spirv-headers",
+    "spirv-cross",
+    "spirv-reflect"
+  ],
+  "builtin-baseline": "959f8e317599dd439bc86f5cb5f0aca648d88c3f",
+  "vcpkg-configuration": {
+    "overlay-ports": [
+      "/home/lukas/dev/repos/Daxa/cmake/vcpkg-port",
+      "/home/lukas/dev/repos/Daxa/cmake/vcpkg-overlay-ports/dxc",
+      "/home/lukas/dev/repos/Daxa/cmake/vcpkg-overlay-ports/glfw3",
+      "/home/lukas/dev/repos/Daxa/cmake/vcpkg-overlay-ports/fsr2"
+    ]
+  }
+}

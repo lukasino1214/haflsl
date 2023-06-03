@@ -42,7 +42,7 @@ namespace haflsl {
         virtual void visit(WhileStatement &node) = 0;
         virtual void visit(ForStatement &node) = 0;
         virtual void visit(ExpressionStatement &node) = 0;
-        // void visit(LocationStatement& node);
+        virtual void visit(LocationStatement& node) = 0;
         virtual void visit(PrintStatement &node) = 0;
 
         StatementVisitor &operator=(const StatementVisitor &) = delete;

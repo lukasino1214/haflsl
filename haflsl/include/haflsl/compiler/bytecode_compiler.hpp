@@ -3,7 +3,7 @@
 #include <haflsl/result.hpp>
 #include <haflsl/lexer.hpp>
 #include <haflsl/parser.hpp>
-#include <haflsl/bytecode_writer.hpp>
+#include <haflsl/writer/bytecode/bytecode_writer.hpp>
 
 #include <filesystem>
 

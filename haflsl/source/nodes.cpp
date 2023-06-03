@@ -90,9 +90,9 @@ namespace haflsl {
         visitor.visit(*this);
     }
 
-    // void LocationStatement::visit(StatementVisitor &visitor) {
-    //     visitor.visit(*this);
-    // }
+    void LocationStatement::visit(StatementVisitor &visitor) {
+        visitor.visit(*this);
+    }
 
     void PrintStatement::visit(StatementVisitor &visitor) {
         visitor.visit(*this);
